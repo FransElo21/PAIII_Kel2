@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TobaStay | Register</title>
   <!--favicon-->
-	<link rel="icon" href="assets/images/favicon-32x32.png" type="image/png">
+	<link rel="icon" href="assets/images/hommielogo-preview.png" type="image/png">
   <!-- loader-->
 	<link href="assets/css/pace.min.css" rel="stylesheet">
 	<script src="assets/js/pace.min.js"></script>
@@ -26,7 +26,65 @@
   <link href="sass/blue-theme.css" rel="stylesheet">
   <link href="sass/responsive.css" rel="stylesheet">
 
+  {{-- ditambahkan --}}
+  <!-- Tambahkan CSS intl-tel-input -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
+  {{-- /ditambahkan --}}
+
   </head>
+
+<style>
+  .auth-cover-left {
+        background-image: url('assets/images/auth/cover-login.jpg');
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        position: relative;
+        /* Tambahkan padding untuk memberi ruang di sekitar overlay */
+        padding: 20px;
+      }
+      .overlay {
+          position: absolute;
+          /* Atur posisi dan ukuran overlay (contoh: 80% width dan height) */
+          width: 85%;
+          height: 85%;
+          /* Pusatkan overlay */
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          /* Styling overlay */
+          background-color: rgba(255, 255, 255, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          /* Tambahkan border radius untuk sudut melengkung */
+          border-radius: 15px;
+          /* Tambahkan shadow untuk efek depth */
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      .text {
+          font-size: 3rem;
+          font-weight: bold;
+          color: #003366;
+          /* Tambahkan padding untuk teks */
+          padding: 20px;
+      }
+      .btn-success {
+        background-color: #28a745; /* Warna hijau */
+        border: none; /* Menghilangkan border */
+        transition: background-color 0.3s, transform 0.2s; /* Animasi transisi */
+      }
+      .btn-success:hover {
+          background-color: #218838; /* Warna hijau lebih gelap saat hover */
+          transform: scale(1.05); /* Efek zoom saat hover */
+      }
+
+      .btn-success:focus {
+          outline: none; /* Menghilangkan outline saat fokus */
+          box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5); /* Menambahkan shadow saat fokus */
+      } 
+</style>
 
 <body>
 
@@ -38,20 +96,23 @@
       <div class="row g-0">
 
         <div class="col-12 col-xl-7 col-xxl-8 auth-cover-left align-items-center justify-content-center d-none d-xl-flex border-end bg-transparent">
-
-          <div class="card rounded-0 mb-0 border-0 shadow-none bg-transparent bg-none">
-            <div class="card-body">
-              <img src="assets/images/auth/register1.png" class="img-fluid auth-img-cover-login" width="500"
-                alt="">
-            </div>
+          <div class="overlay">
+            <h1 class="mb-0" style="color: #289A84;">
+              <span style="color:#152C5B ;">HOM</span>MIE.
+            </h1>
           </div>
-
         </div>
 
         <div class="col-12 col-xl-5 col-xxl-4 auth-cover-right align-items-center justify-content-center">
           <div class="card rounded-0 m-3 border-0 shadow-none bg-none">
             <div class="card-body p-sm-5">
-              <img src="assets/images/logo1.png" class="mb-4" width="145" alt="">
+              <div class="d-flex align-items-center mb-3">
+                <img src="{{ asset('assets/images/hommielogo-preview.png') }}" class="logo-img me-2" alt="" style="width: 100px; height: auto;">
+                <h3 class="mb-0" style="color: #152C5B;">
+                  <span style="color: #289A84;">Hom</span>mie
+                </h3>
+              </div>
+              
               <h4 class="fw-bold">Get Started Now</h4>
               <p class="mb-0">Enter your credentials to create your account</p>
 
@@ -71,52 +132,80 @@
               </div>
 
               <div class="form-body mt-4">
-                <form class="row g-3">
+
+                <form class="row g-3" id="registerForm" action="{{ route('insertRegister') }}" method="POST">
+                  @csrf
                   <div class="col-12">
-                    <label for="inputUsername" class="form-label">Username</label>
-                    <input type="email" class="form-control" id="inputUsername" placeholder="Jhon">
+                      <label for="inputFullName" class="form-label">Full Name</label>
+                      <input type="text" class="form-control" id="inputFullName" name="name" required>
                   </div>
                   <div class="col-12">
-                    <label for="inputEmailAddress" class="form-label">Email Address</label>
-                    <input type="email" class="form-control" id="inputEmailAddress" placeholder="example@user.com">
+                      <label for="inputUsername" class="form-label">Username</label>
+                      <input type="text" class="form-control" id="inputUsername" name="username" required>
                   </div>
                   <div class="col-12">
-                    <label for="inputChoosePassword" class="form-label">Password</label>
-                    <div class="input-group" id="show_hide_password">
-                      <input type="password" class="form-control" id="inputChoosePassword" value="12345678" placeholder="Enter Password">
-                       <a href="javascript:;" class="input-group-text bg-transparent"><i class="bi bi-eye-slash-fill"></i></a>
-                    </div>
+                      <label for="inputEmailAddress" class="form-label">Email Address</label>
+                      <input type="email" class="form-control" id="inputEmailAddress" name="email" required>
                   </div>
                   <div class="col-12">
-                    <label for="inputSelectCountry" class="form-label">Country</label>
-                    <select class="form-select" id="inputSelectCountry" aria-label="Default select example">
-                      <option selected="">India</option>
-                      <option value="1">United Kingdom</option>
-                      <option value="2">America</option>
-                      <option value="3">Dubai</option>
-                    </select>
+                      <label for="inputPhoneNumber" class="form-label">Phone Number</label>
+                      <input type="tel" class="form-control" id="inputPhoneNumber" name="phone" required>
                   </div>
                   <div class="col-12">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked">
-                      <label class="form-check-label" for="flexSwitchCheckChecked">I read and agree to Terms &amp; Conditions</label>
-                    </div>
+                      <label for="inputUserType" class="form-label">Tipe User</label>
+                      <select class="form-control" id="inputUserType" name="user_type_id" required>
+                          <option value="" selected disabled>Pilih tipe user</option>
+                          @foreach($userTypes as $userType)
+                              <option value="{{ $userType->id }}">{{ $userType->userType_name }}</option>
+                          @endforeach
+                      </select>
+                  </div>
+                  <div class="col-12">
+                      <label for="inputUserRole" class="form-label">Role User</label>
+                      <select class="form-control" id="inputUserRole" name="user_role_id" required>
+                          <option value="" selected disabled>Pilih role user</option>
+                          @foreach($userRoles as $userRole)
+                              <option value="{{ $userRole->id }}">{{ $userRole->role_name }}</option>
+                          @endforeach
+                      </select>
+                  </div>
+                  <div class="col-12">
+                      <label for="inputChoosePassword" class="form-label">Password</label>
+                      <div class="input-group">
+                          <input type="password" class="form-control" id="inputChoosePassword" name="password" required>
+                          <a href="javascript:;" class="input-group-text bg-transparent" onclick="togglePassword()">
+                              <i class="bi bi-eye-slash-fill"></i>
+                          </a>
+                      </div>
+                  </div>
+                  <div class="col-12">
+                      <label for="inputConfirmPassword" class="form-label">Confirm Password</label>
+                      <input type="password" class="form-control" id="inputConfirmPassword" name="password_confirmation" required>
+                  </div>
+                  <div class="col-12">
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked" required>
+                          <label class="form-check-label" for="flexSwitchCheckChecked">I agree to the Terms & Conditions</label>
+                      </div>
+                  </div>
+                  <div class="col-12">
+                      <!-- Google reCAPTCHA -->
+                      <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY"></div>
                   </div>
                   <div class="col-12">
                     <div class="d-grid">
-                      <button type="submit" class="btn btn-grd-danger">Register</button>
-                    </div>
+                      <button type="submit" class="btn btn-success btn-lg rounded-pill shadow">Register</button>
+                  </div>
                   </div>
                   <div class="col-12">
-                    <div class="text-start">
-                      <p class="mb-0">Already have an account?
-                        <a href="{{ route('login') }}">Sign in here</a>
-                      </p>
-                    </div>
+                      <div class="text-start">
+                          <p class="mb-0">Already have an account?
+                              <a href="{{ route('login') }}">Sign in here</a>
+                          </p>
+                      </div>
                   </div>
-                </form>
-              </div>
-
+              </form>              
+            </div>            
           </div>
           </div>
         </div>
@@ -127,10 +216,6 @@
   </div>
 
   <!--authentication-->
-
-
-
-
   <!--plugins-->
   <script src="assets/js/jquery.min.js"></script>
 
@@ -150,6 +235,49 @@
       });
     });
   </script>
+
+  {{-- ditambahkan --}}
+  <!-- Tambahkan JS intl-tel-input -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+<script>
+    // Inisialisasi intl-tel-input untuk Phone Number
+    var input = document.querySelector("#inputPhoneNumber");
+    var iti = window.intlTelInput(input, {
+        initialCountry: "id", // Default ke Indonesia
+        separateDialCode: true,
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+    });
+
+    // Validasi Password
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+        var password = document.getElementById("inputChoosePassword").value;
+        var confirmPassword = document.getElementById("inputConfirmPassword").value;
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert("Passwords do not match!");
+        }
+    });
+
+    // Toggle Password Visibility
+    function togglePassword() {
+        var passwordField = document.getElementById("inputChoosePassword");
+        var icon = document.querySelector(".input-group-text i");
+
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            icon.classList.remove("bi-eye-slash-fill");
+            icon.classList.add("bi-eye-fill");
+        } else {
+            passwordField.type = "password";
+            icon.classList.remove("bi-eye-fill");
+            icon.classList.add("bi-eye-slash-fill");
+        }
+      }
+</script>
+
+<!-- Tambahkan Google reCAPTCHA -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  {{-- /ditambahkan --}}
 
 </body>
 

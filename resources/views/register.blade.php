@@ -135,40 +135,20 @@
 
                 <form class="row g-3" id="registerForm" action="{{ route('insertRegister') }}" method="POST">
                   @csrf
-                  <div class="col-12">
-                      <label for="inputFullName" class="form-label">Full Name</label>
-                      <input type="text" class="form-control" id="inputFullName" name="name" required>
-                  </div>
+              
+                  <!-- Username -->
                   <div class="col-12">
                       <label for="inputUsername" class="form-label">Username</label>
                       <input type="text" class="form-control" id="inputUsername" name="username" required>
                   </div>
+              
+                  <!-- Email -->
                   <div class="col-12">
                       <label for="inputEmailAddress" class="form-label">Email Address</label>
                       <input type="email" class="form-control" id="inputEmailAddress" name="email" required>
                   </div>
-                  <div class="col-12">
-                      <label for="inputPhoneNumber" class="form-label">Phone Number</label>
-                      <input type="tel" class="form-control" id="inputPhoneNumber" name="phone" required>
-                  </div>
-                  <div class="col-12">
-                      <label for="inputUserType" class="form-label">Tipe User</label>
-                      <select class="form-control" id="inputUserType" name="user_type_id" required>
-                          <option value="" selected disabled>Pilih tipe user</option>
-                          @foreach($userTypes as $userType)
-                              <option value="{{ $userType->id }}">{{ $userType->userType_name }}</option>
-                          @endforeach
-                      </select>
-                  </div>
-                  <div class="col-12">
-                      <label for="inputUserRole" class="form-label">Role User</label>
-                      <select class="form-control" id="inputUserRole" name="user_role_id" required>
-                          <option value="" selected disabled>Pilih role user</option>
-                          @foreach($userRoles as $userRole)
-                              <option value="{{ $userRole->id }}">{{ $userRole->role_name }}</option>
-                          @endforeach
-                      </select>
-                  </div>
+              
+                  <!-- Password -->
                   <div class="col-12">
                       <label for="inputChoosePassword" class="form-label">Password</label>
                       <div class="input-group">
@@ -178,33 +158,76 @@
                           </a>
                       </div>
                   </div>
+              
+                  <!-- Confirm Password -->
                   <div class="col-12">
                       <label for="inputConfirmPassword" class="form-label">Confirm Password</label>
                       <input type="password" class="form-control" id="inputConfirmPassword" name="password_confirmation" required>
                   </div>
+
+                  <div class="col-12">
+                    <label for="inputUserType" class="form-label">Tipe User</label>
+                    <select class="form-control" id="inputUserType" name="user_type_id" required>
+                      <option value="" selected disabled>Pilih tipe user</option>
+                      @foreach($userTypes as $userType)
+                      @if($userType->userType_name !== 'Admin')
+                        <option value="{{ $userType->id }}">{{ $userType->userType_name }}</option>
+                      @endif
+                    @endforeach
+                    </select>
+                  </div>
+              
+                  <!-- Terms & Conditions -->
                   <div class="col-12">
                       <div class="form-check form-switch">
                           <input class="form-check-input" type="checkbox" id="flexSwitchCheckChecked" required>
                           <label class="form-check-label" for="flexSwitchCheckChecked">I agree to the Terms & Conditions</label>
                       </div>
                   </div>
+              
+                  <!-- Submit Button -->
                   <div class="col-12">
-                      <!-- Google reCAPTCHA -->
-                      <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY"></div>
-                  </div>
-                  <div class="col-12">
-                    <div class="d-grid">
-                      <button type="submit" class="btn btn-success btn-lg rounded-pill shadow">Register</button>
-                  </div>
-                  </div>
-                  <div class="col-12">
-                      <div class="text-start">
-                          <p class="mb-0">Already have an account?
-                              <a href="{{ route('login') }}">Sign in here</a>
-                          </p>
+                      <div class="d-grid">
+                          <button type="submit" class="btn btn-success btn-lg rounded-pill shadow">Register</button>
                       </div>
                   </div>
-              </form>              
+              
+                  <!-- Login Link -->
+                  <div class="col-12 text-center mt-3">
+                      <p class="mb-0">Already have an account?
+                          <a href="{{ route('login') }}" class="text-success fw-bold">Sign in here</a>
+                      </p>
+                  </div>
+              </form>
+              
+              <!-- JS untuk Toggle Password -->
+              <script>
+                  function togglePassword() {
+                      const passwordField = document.getElementById("inputChoosePassword");
+                      const icon = document.querySelector(".input-group-text i");
+                      if (passwordField.type === "password") {
+                          passwordField.type = "text";
+                          icon.classList.remove("bi-eye-slash-fill");
+                          icon.classList.add("bi-eye-fill");
+                      } else {
+                          passwordField.type = "password";
+                          icon.classList.remove("bi-eye-fill");
+                          icon.classList.add("bi-eye-slash-fill");
+                      }
+                  }
+              </script>
+              
+              <!-- Validasi Password -->
+              <script>
+                  document.getElementById("registerForm").addEventListener("submit", function (e) {
+                      const password = document.getElementById("inputChoosePassword").value;
+                      const confirmPassword = document.getElementById("inputConfirmPassword").value;
+                      if (password !== confirmPassword) {
+                          e.preventDefault();
+                          alert("Passwords do not match!");
+                      }
+                  });
+              </script>              
             </div>            
           </div>
           </div>

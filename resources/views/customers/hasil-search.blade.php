@@ -138,28 +138,52 @@
     </section>
 
     <!-- Menampilkan hasil pencarian properti -->
-    <div class="row row-cols-1 row-cols-md-4 g-4 mt-4">
+    <div class="row row-cols-1 row-cols-md-4 g-4">
         @foreach ($properties as $property)
-            <div class="col fade-in">
-                <a href="{{ route('detail-property.show', $property->property_id) }}" class="text-decoration-none">
-                    <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden property-card position-relative">
-                        <span class="type-badge">{{ $property->property_type }}</span>
-                        <div class="overflow-hidden">
-                            <img src="{{ asset('storage/' . $property->image) }}" 
-                                 class="card-img-top object-fit-cover" 
-                                 style="height: 220px; object-fit: cover; transition: 0.3s ease;" 
-                                 alt="{{ $property->property_name }}">
-                        </div>
-                        <div class="card-body d-flex flex-column">
-                            <h6 class="card-title mb-1 fw-bold text-dark">{{ $property->property_name }}</h6>
-                            <small class="text-muted mb-2">Kecamatan {{ $property->subdistrict }}</small>
-                            <p class="card-text text-muted mb-3" style="font-size: 0.9rem;">{{ Str::limit($property->description, 80) }}</p>
-                        </div>
+          <div class="col fade-in">
+            <a href="{{ route('detail-property.show', $property->property_id) }}" class="text-decoration-none">
+              <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden property-card position-relative transition-card">
+                <!-- Badge Tipe Properti -->
+                <span class="position-absolute top-0 start-0 m-2 px-3 py-1 bg-success text-white rounded-pill small shadow-sm">
+                  {{ $property->property_type }}
+                </span>
+                <!-- Gambar Properti -->
+                <div class="overflow-hidden" style="aspect-ratio: 3/2;">
+                  <img src="{{ asset('storage/' . $property->image) }}"
+                      class="card-img-top object-fit-cover"
+                      alt="{{ $property->property_name }}">
+                </div>
+                
+                <div class="card-body d-flex flex-column justify-content-between">
+                  <div>
+                    <h6 class="card-title mb-1 fw-bold text-dark">{{ $property->property_name }}</h6>
+                    <small class="text-muted mb-2">{{ $property->subdistrict }}, Surabaya</small>
+                    
+                    <!-- Rating Section -->
+                    <div class="d-flex align-items-center mt-2">
+                      <div class="me-2">
+                        @for($i=1; $i <= 5; $i++)
+                          <i class="fas fa-star "></i>
+                        @endfor
+                      </div>
+                      <span class="text-muted small">rb Ulasan</span>
                     </div>
-                </a>
-            </div>
+                  </div>
+  
+                  <div>
+                    <p class="mb-1">
+                      <span class="text-danger fw-bold fs-5">
+                        IDR {{ number_format($property->min_price) }}
+                      </span>
+                    </p>
+                  </div>
+  
+                </div>
+              </div>
+            </a>
+          </div>
         @endforeach
-    </div>
+    </div> 
 </section>
 
 @endsection

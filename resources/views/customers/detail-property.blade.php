@@ -360,6 +360,10 @@
                 </div>
 
                 <style>
+                    .custom-swal-popup {
+                        border-bottom-left-radius: 15px;
+                        border-bottom-right-radius: 15px;
+                    }
                     .position-fixed.bottom-0.start-0.w-100.bg-white.py-3.shadow-sm.border-top {
                         z-index: 1000; /* Pastikan footer selalu di atas */
                         background-color: white;
@@ -441,7 +445,13 @@
                 <!-- Reviews -->
                 <div class="mb-5 fade-in">
                     <h4 class="fw-bold mb-4">Ulasan</h4>
-                
+                    <div class="d-flex align-items-center">
+                        @if($totalReviews > 0)
+                            <span class="fw-bold fs-5 me-1 text-dark"><i class="fas fa-star text-warning me-1" style="font-size: 1.2rem;"></i>{{ number_format($avgRating, 1) }}</span>
+                            <span class="text-muted">({{ $totalReviews }} ulasan)</span>
+                        @endif
+                    </div>
+
                     <!-- Daftar Ulasan -->
                     @if(!empty($reviews))
                         <div class="row g-4">
@@ -652,22 +662,53 @@
     let diffDays = 0;
 
     function showQuantityControls(roomId, pricePerRoom) {
+        // Ambil ID pengguna dari Blade (jika null, berarti belum login)
+        const userId = "{{ $userId }}"; 
+
+        // Cek apakah pengguna sudah login
+        if (!userId) {
+            Swal.fire({
+                title: 'Login Diperlukan',
+                text: 'Anda harus login terlebih dahulu untuk memesan kamar.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#007BFF', // Warna biru untuk tombol "Login Sekarang"
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'custom-swal-popup' // Kelas kustom untuk modal
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/login';
+                }
+            });
+            return;
+        }
+
+        // Lanjutkan logika asli jika sudah login
         const quantityArea = document.getElementById(`quantity-area-${roomId}`);
         const btnArea = document.getElementById(`btn-area-${roomId}`);
-
-        // Cek apakah tanggal sudah dipilih
+        
+        // Validasi tanggal
         const checkIn = document.getElementById("checkInDate").value;
         const checkOut = document.getElementById("checkOutDate").value;
-
         if (!checkIn || !checkOut) {
             alert("Silakan pilih tanggal check-in dan check-out terlebih dahulu.");
             return;
         }
 
+        // Tampilkan input kuantitas dan sembunyikan tombol "Pilih"
         quantityArea.classList.remove("d-none");
         if (btnArea) btnArea.classList.add("d-none");
 
-        updateTotalPrice();
+        // Set nilai kuantitas ke 1 dan perbarui total harga
+        const input = document.getElementById(`quantity-input-${roomId}`);
+        if (input) {
+            input.value = 1;
+            updateTotalPrice();
+        }
     }
 
     function increaseQuantity(roomId) {

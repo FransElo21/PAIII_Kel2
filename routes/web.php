@@ -19,33 +19,14 @@ Route::post('/login1', [AuthController::class, 'login'])->name('login1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Verivikasi Email
-Route::get('/verify-email/{id}/{token}', function ($id, $token) {
-    $user = User::find($id);
 
-    if (!$user || $user->email_verified_at || !hash_equals(sha1($user->email), $token)) {
-        return redirect('/login')->with('error', 'Link verifikasi tidak valid atau sudah digunakan.');
-    }
+// Hapus route closure lama, gunakan controller
+Route::get('/verify-email/{userId}/{token}', [AuthController::class, 'verifyEmail'])->name('verify.email');
 
-    // Update status verifikasi
-    $user->update(['email_verified_at' => Carbon::now()]);
+// Resend Verification Email
+Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->name('email.resend');
 
-    return redirect('/login')->with('success', 'Email berhasil diverifikasi, silakan login!');
-})->name('email.verify');
-
-Route::post('/resend-verification', function (Request $request) {
-    $user = User::where('email', $request->email)->first();
-
-    if (!$user || $user->email_verified_at) {
-        return back()->with('error', 'Email sudah diverifikasi atau tidak ditemukan.');
-    }
-
-    // Kirim ulang email verifikasi
-    sendVerificationEmail($user);
-
-    return back()->with('success', 'Email verifikasi telah dikirim ulang.');
-})->name('email.resend');
-
-
+// Register & Login
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
 Route::post('/register-insert', [AuthController::class, 'insertRegister'])->name('insertRegister');
 
@@ -70,12 +51,27 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/search-property', [UserController::class, 'search'])->name('search');
 
-Route::post('/booking/store', [UserController::class, 'booking_store'])->name('booking.store');
 
+
+
+// Halaman form pemesanan
 Route::get('/pemesanan', [UserController::class, 'pemesanan'])->name('pemesanan.index');
+Route::post('/pemesanan-store', [UserController::class, 'store_bokings'])->name('booking.store');
 
+// Halaman pembayaran
+Route::get('/pembayaran/{booking_id}', [UserController::class, 'payment_show'])->name('payment.show');
 
+// Proses pembayaran
+Route::post('/pembayaran/proses', [UserController::class, 'payment_process'])->name('payment.process');
 
+// Halaman sukses pembayaran
+Route::get('/pembayaran/sukses/{booking_id}', [UserController::class, 'payment_success'])->name('booking.success');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [UserController::class, 'profile'])->name('profileuser.show');
+});
+
+Route::get('/riwayat-transaksi', [UserController::class, 'riwayat_transaksi'])->name('riwayat-transaksi.index');
 
 
 // owner
@@ -110,7 +106,11 @@ Route::get('/property/room/{id}/edit', [OwnerController::class, 'editRoom'])->na
 Route::put('/property/room/update', [OwnerController::class, 'updateRoom'])->name('property.room.update');
 Route::delete('/property/room/delete', [OwnerController::class, 'deleteRoom'])->name('property.room.delete');
 
-Route::post('/property/room/add', [OwnerController::class, 'addRoom'])->name('property.room.add');
+// Route::post('/property/room/add', [OwnerController::class, 'addRoom'])->name('property.room.add');
+
+Route::get('/property/{property_id}/selected-facilities', [OwnerController::class, 'get_FacilitiesByPropertyId'])->name('property.get-selected-facilities');
+
+Route::get('/tentang', [UserController::class, 'tentang'])->name('tentang');
 
 
 

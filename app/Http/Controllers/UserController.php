@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -109,170 +111,186 @@ class UserController extends Controller
     }    
     
     public function search(Request $request)
-        {
-            $keyword = $request->input('keyword');
-            $cityId = $request->input('city_id');
-            $priceMin = $request->input('price_min');
-            $priceMax = $request->input('price_max');
-            $orderBy = $request->input('order_by');
-        
-            // Mengambil hasil pencarian properti
-            $properties = DB::select("CALL sp_search_property(?, ?, ?, ?, ?)", [
-                $keyword,
-                $cityId,
-                $priceMin,
-                $priceMax,
-                $orderBy
-            ]);
-        
-            // Mengambil daftar kota
-            $cities = DB::select('CALL sp_get_cities()');
-        
-            // Mengirimkan data ke view
-            return view('customers.hasil-search', compact('properties', 'cities'));
-        }
-
-        public function booking_store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'renter_name' => 'required|string|max:255',
-            'ktp_image' => 'required|string', // asumsikan base64 / file path
-            'guest_option' => 'required|in:saya,lain',
-            'guest_name' => 'nullable|string|max:255',
-            'tanggal_checkin' => 'required|date',
-            'tanggal_checkout' => 'required|date|after:tanggal_checkin',
-            'note' => 'nullable|string|max:200',
-            'details' => 'required|array|min:1'
+        $keyword = $request->input('keyword');
+        $cityId = $request->input('city_id');
+        $priceMin = $request->input('price_min');
+        $priceMax = $request->input('price_max');
+        $orderBy = $request->input('order_by');
+    
+        // Mengambil hasil pencarian properti
+        $properties = DB::select("CALL sp_search_property(?, ?, ?, ?, ?)", [
+            $keyword,
+            $cityId,
+            $priceMin,
+            $priceMax,
+            $orderBy
         ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid booking data',
-                'errors' => $validator->errors()
-            ], 400);
-        }
-
-        DB::beginTransaction();
-
-        try {
-            // Simpan booking utama dan ambil ID-nya
-            DB::statement('CALL insert_booking(?, ?, ?, ?, ?, ?, @new_booking_id)', [
-                auth()->id(),
-                $request->renter_name,
-                $request->guest_option,
-                $request->guest_name,
-                $request->ktp_image,
-                $request->note
-            ]);
-
-            $id_booking = DB::select("SELECT @new_booking_id AS id")[0]->id;
-
-            $checkin = Carbon::parse($request->tanggal_checkin);
-            $checkout = Carbon::parse($request->tanggal_checkout);
-
-            foreach ($request->input('details') as $detail) {
-                $detailValidator = Validator::make($detail, [
-                    'room_id' => 'required|integer|exists:rooms,id',
-                    'quantity' => 'required|integer|min:1'
-                ]);
-
-                if ($detailValidator->fails()) {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid booking detail data',
-                        'errors' => $detailValidator->errors()
-                    ], 400);
-                }
-
-                // Ambil harga dan tipe_sewa dari database
-                $roomPrice = DB::table('room_prices')
-                    ->where('room_id', $detail['room_id'])
-                    ->where('is_deleted', 0)
-                    ->first();
-
-                if (!$roomPrice) {
-                    throw new \Exception("Harga kamar tidak ditemukan.");
-                }
-
-                // Hitung durasi dan subtotal
-                $durasi = ($roomPrice->tipe_sewa == 'monthly')
-                    ? max(1, $checkin->diffInMonths($checkout))
-                    : max(1, $checkin->diffInDays($checkout));
-
-                $subtotal = $roomPrice->harga_per_unit * $durasi * $detail['quantity'];
-
-                // Insert detail
-                DB::statement('CALL insert_booking_detail(?, ?, ?, ?, ?, ?)', [
-                    $id_booking,
-                    $detail['room_id'],
-                    $detail['quantity'],
-                    $roomPrice->harga_per_unit,
-                    $roomPrice->tipe_sewa,
-                    $subtotal
-                ]);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Booking created successfully',
-                'booking_id' => $id_booking
-            ], 201);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Booking creation failed: ' . $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
-    }
+    
+        // Mengambil daftar kota
+        $cities = DB::select('CALL sp_get_cities()');
+    
+        // Mengirimkan data ke view
+        return view('customers.hasil-search', compact('properties', 'cities'));
+    }       
 
     public function pemesanan(Request $request)
-{
-    // 1. Ambil semua parameter dari request
-    $encodedRooms = $request->query('rooms');
-    $propertyId = $request->query('property_id'); // Tambahkan ini untuk ambil property_id
-    $userId = $request->query('user_id'); // Jika butuh user_id
+    {
+        // 1. Ambil semua parameter dari request
+        $encodedRooms = $request->query('rooms');
+        $propertyId = $request->query('property_id'); // Tambahkan ini untuk ambil property_id
+        $userId = $request->query('user_id'); // Jika butuh user_id
+        
+        // 2. Validasi parameter wajib
+        if (!$encodedRooms || !$propertyId) {
+            return back()->with('error', 'Data pemesanan tidak lengkap.');
+        }
+
+        try {
+            // 3. Decode JSON rooms dari URL
+            $selectedRooms = json_decode(urldecode($encodedRooms), true);
+            
+            // 4. Ambil data dari database menggunakan stored procedures
+            $property = DB::select('CALL view_propertyById(?)', [$propertyId]);
+            $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$propertyId]);
+
+            $propertyImages = DB::select('CALL get_propertyImagesByProperty(?)', [$propertyId]);
+            $images = $propertyImages; // Gunakan data asli tanpa pluck
+            
+            // 5. Ambil detail kamar dari database (opsional, jika perlu validasi)
+            $rooms = DB::select("CALL get_RoomsByPropertyId(?)", [$propertyId]);
+
+            // 6. Format data agar bisa digunakan di view
+            $property = $property[0] ?? null; // Ambil objek tunggal dari array
+
+            return view('customers.pemesanan', compact(
+                'selectedRooms',
+                'property',
+                'fasilitas',
+                'rooms',
+                'images'
+            ));
+            
+        } catch (\Exception $e) {
+            // 7. Handle error database
+            return back()->with('error', 'Gagal memuat data pemesanan: ' . $e->getMessage());
+        }
+    }
+
+    public function profile()
+    {
+        // Ambil data pengguna dari database
+        $userId = Auth::id();
+        $user = DB::select("CALL get_user_profile(?)", [$userId]);
+
+        if (!$user || empty($user)) {
+            abort(404);
+        }
+
+        $user = (object)$user[0]; // Konversi ke objek
+        return view('customers.profile', compact('user'));
+    }
+
+    public function tentang()
+    {
+        return view('customers.tentang'); // Pastikan file 'tentang.blade.php' ada di resources/views/
+    }
+
+    public function store_bokings(Request $request)
+    {
+        // Validasi input pengguna
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'nik' => 'required|string|max:20',
+            'email' => 'required|email|max:255',
+            'guest_option' => 'required|in:saya,lain',
+            'nama_tamu' => $request->guest_option === 'lain' ? 'required|string|max:255' : 'nullable',
+            'property_id' => 'required|integer|exists:properties,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after:check_in',
+            'total_price' => 'required|numeric|min:0',
+            'rooms' => 'required|json'
+        ]);
     
-    // 2. Validasi parameter wajib
-    if (!$encodedRooms || !$propertyId) {
-        return back()->with('error', 'Data pemesanan tidak lengkap.');
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+    
+        try {
+            // Pastikan pengguna login
+            if (!Auth::check()) {
+                return back()->withErrors(['error' => 'Silakan login terlebih dahulu']);
+            }
+    
+            $data = $request->all();
+            $userId = Auth::id();
+    
+            // Decode data kamar
+            $rooms = json_decode($data['rooms'], true);
+            if (!is_array($rooms)) {
+                throw new \Exception("Data kamar tidak valid");
+            }
+    
+            // Siapkan data untuk dikirim ke SP
+            $guestName = $data['guest_option'] === 'saya' 
+                ? $data['name'] 
+                : $data['nama_tamu'];
+    
+            $payload = [
+                'user_id' => $userId,
+                'property_id' => $data['property_id'],
+                'check_in' => $data['check_in'],
+                'check_out' => $data['check_out'],
+                'total_price' => $data['total_price'],
+                'guest_name' => $guestName,
+                'email' => $data['email'],
+                'nik' => $data['nik'],
+                'rooms' => $rooms,
+            ];
+    
+            // Panggil Stored Procedure (SP)
+            $result = DB::select('CALL create_Booking(?)', [json_encode($payload)]);
+            $bookingId = $result[0]->booking_id;
+    
+            // Arahkan ke halaman pembayaran
+            return redirect()->route('payment.show', ['booking_id' => $bookingId]);
+        } catch (\Exception $e) {
+            // Tangkap error dan kembalikan ke halaman sebelumnya
+            return back()->withErrors(['error' => 'Gagal menyimpan pemesanan: ' . $e->getMessage()]);
+        }
     }
 
-    try {
-        // 3. Decode JSON rooms dari URL
-        $selectedRooms = json_decode(urldecode($encodedRooms), true);
-        
-        // 4. Ambil data dari database menggunakan stored procedures
-        $property = DB::select('CALL view_propertyById(?)', [$propertyId]);
-        $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$propertyId]);
-
-        $propertyImages = DB::select('CALL get_propertyImagesByProperty(?)', [$propertyId]);
-        $images = $propertyImages; // Gunakan data asli tanpa pluck
-        
-        // 5. Ambil detail kamar dari database (opsional, jika perlu validasi)
-        $rooms = DB::select("CALL get_RoomsByPropertyId(?)", [$propertyId]);
-
-        // 6. Format data agar bisa digunakan di view
-        $property = $property[0] ?? null; // Ambil objek tunggal dari array
-
-        return view('customers.pemesanan', compact(
-            'selectedRooms',
-            'property',
-            'fasilitas',
-            'rooms',
-            'images'
-        ));
-        
-    } catch (\Exception $e) {
-        // 7. Handle error database
-        return back()->with('error', 'Gagal memuat data pemesanan: ' . $e->getMessage());
+    public function payment_show($booking_id)
+    {
+        // Panggil stored procedure
+        $bookingDetails = DB::select('CALL get_BookingDetails(?)', [$booking_id]);
+    
+        // Pastikan data ditemukan
+        if (empty($bookingDetails)) {
+            abort(404);
+        }
+    
+        // Ambil data booking utama (dari item pertama)
+        $booking = $bookingDetails[0]; // Sekarang $booking adalah objek
+    
+        // Ambil semua detail kamar (seluruh array)
+        $rooms = $bookingDetails;
+    
+        // Kirim data ke view
+        return view('customers.pembayaran', compact('booking', 'rooms'));
     }
-}
+    
+    public function riwayat_transaksi(Request $request)
+    {
+        // Ambil ID user yang login
+        $userId = auth()->id();
+
+        // Panggil SP dan ambil hasilnya
+        $bookings = DB::select('CALL get_BookingsByUserId(?)', [$userId]);
+        return view('customers.riwayat-transaksi' , compact('bookings'));
+    }
+
 
 }
+
+

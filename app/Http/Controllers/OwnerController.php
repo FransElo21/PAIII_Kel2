@@ -277,8 +277,8 @@ public function getFacilities()
     foreach ($facilities as $facility) {
         $response[] = [
             "id"   => $facility->id,
-            "name" => $facility->name,   // Kolom dari SP (bukan facility_name)
-            "icon" => $facility->icon    // Tambahkan kolom icon
+            "name" => $facility->name,   
+            "icon" => $facility->icon    
         ];
     }
 
@@ -309,19 +309,19 @@ public function addRoom(Request $request)
     try {
         // Validasi dulu
         $request->validate([
-            'property_id'  => 'required|integer',
-            'room_type'    => 'required|string',
-            'price'        => 'required|numeric',
-            'quantity'     => 'required|integer',
-            'room_images'  => 'nullable|array',
-            'room_images.*'=> 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            'property_id' => 'required|integer',
+            'room_type'   => 'required|string',
+            'price'       => 'required|numeric|min:0|max:999999999', // max 999 juta
+            'stok'        => 'required|integer',
+            'room_images' => 'nullable|array',
+            'room_images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         // Insert ke rooms table
         $roomData = [
             'property_id' => $request->property_id,
             'room_type'   => $request->room_type,
-            'quantity'    => $request->quantity
+            'stok'    => $request->stok
         ];
 
         $roomResult = DB::select("CALL store_room(?)", [json_encode($roomData)]);
@@ -364,4 +364,21 @@ public function addRoom(Request $request)
         ]);
     }
 }
+
+public function get_FacilitiesByPropertyId($propertyId)
+{
+    try {
+        // Panggil SP dengan parameter property_id
+        $facilities = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$propertyId]);
+        
+        // Kembalikan data dalam format JSON
+        return response()->json($facilities);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengambil fasilitas: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
 }

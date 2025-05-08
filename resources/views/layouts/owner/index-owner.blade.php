@@ -31,6 +31,10 @@
   <link href="{{ asset('owner/sass/bordered-theme.css') }}" rel="stylesheet">
   <link href="{{ asset('owner/sass/responsive.css') }}" rel="stylesheet">
 
+  <!-- Tambahkan di layout Blade -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
   {{-- tambah --}}
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -475,6 +479,19 @@
         maxfilesize: 1000000
     });
 </script>
+
+@if(session('success'))
+<script>
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: '{{ session('success') }}',
+        showConfirmButton: false,
+        timer: 2000
+    });
+</script>
+@endif
+
 
 <!--plugins-->
 <script src="{{ asset('owner/assets/js/jquery.min.js') }}"></script>

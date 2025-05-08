@@ -165,16 +165,16 @@
     }
   }
   /* Efek Bintang */
-.card .fa-star {
-    font-size: 1rem;
-}
+  .card .fa-star {
+      font-size: 1rem;
+  }
 
-/* Transisi saat hover */
-.property-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-}
+  /* Transisi saat hover */
+  .property-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+  }
 </style>
 
 <div class="container mt-2">

@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verifikasi Email</title>
 </head>
 <body>
-    <h2>Halo!</h2>
-    <p>Silakan klik link di bawah ini untuk verifikasi email Anda:</p>
-    <a href="{{ $verificationUrl }}" style="padding: 10px 20px; background: blue; color: white; text-decoration: none;">Verifikasi Email</a>
-    <p>Jika Anda tidak merasa mendaftar, abaikan email ini.</p>
+    <h3>Halo, {{ $username }}</h3>
+    <p>Klik tombol di bawah untuk memverifikasi email Anda:</p>
+
+    <a href="{{ $verificationUrl }}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">
+        Verifikasi Email
+    </a>
+
+    <p>Jika tombol di atas tidak berfungsi, salin tautan ini ke browser:</p>
+    <p>{{ $verificationUrl }}</p>
 </body>
 </html>

@@ -62,7 +62,7 @@
                width="100" 
                class="logo-img me-2">
           <h5 class="mb-0 logo-text">
-            <h5 class="mb-0" style="color:#289A84;"><span style="color:#152C5B;">Hom</span >mie
+            {{-- <h5 class="mb-0" style="color:#289A84;"><span style="color:#152C5B;">Hom</span >mie --}}
           </h5>
         </a>
       </div>
@@ -104,7 +104,9 @@
           <!-- Tentang -->
           <li class="nav-item">
             <a class="{{ Route::currentRouteName() == 'tentang' ? 'nav-link fw-bold text-success' : 'nav-link fw-semibold text-dark' }}"
-               href="#">Tentang</a>
+               href="{{ route('tentang') }}">
+                Tentang
+            </a>
           </li>
   
           <!-- Auth Links -->
@@ -139,17 +141,16 @@
                 </li>
                 <li><hr class="dropdown-divider m-0"></li>
                 <li>
-                  <a class="dropdown-item d-flex align-items-center gap-2 py-3" href="#">
+                  <a class="dropdown-item d-flex align-items-center gap-2 py-3" href="{{ route('profileuser.show') }}">
                     <i class="material-icons-outlined fs-6">person_outline</i> Profile
                   </a>
                 </li>
                 <li><hr class="dropdown-divider m-0"></li>
                 <li>
-                  <form action="{{ route('logout') }}" method="POST">
+                  <form id="logoutForm" action="{{ route('logout') }}" method="POST">
                     @csrf
-                    <button type="submit" 
-                            class="dropdown-item d-flex align-items-center gap-2 py-3 text-danger">
-                      <i class="material-icons-outlined fs-6">power_settings_new</i> Logout
+                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-3 text-danger">
+                        <i class="material-icons-outlined fs-6">power_settings_new</i> Logout
                     </button>
                   </form>
                 </li>
@@ -466,6 +467,104 @@
     })
 
   </script>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const logoutForm = document.getElementById('logoutForm');
+
+        logoutForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // Cegah pengiriman form langsung
+
+            Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: "Anda akan keluar dari akun ini!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Logout',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    logoutForm.submit(); // Kirim form jika konfirmasi ya
+                }
+            });
+        });
+    });
+</script>
+<!-- SweetAlert2 Alert -->
+@if(session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: '{{ e(session('success')) }}',
+            timer: 3000,
+            showConfirmButton: false
+        });
+    </script>
+@endif
+
+<!-- Offcanvas for Mobile -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar"
+     aria-labelledby="offcanvasNavbarLabel">
+  <div class="offcanvas-header border-bottom h-70">
+    <h5 class="offcanvas-title" id="offcanvasNavbarLabel">Menu</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
+            aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+      <li class="nav-item">
+        <a class="nav-link fw-semibold" href="{{ route('landingpage') }}">Beranda</a>
+      </li>
+
+      <!-- Dropdown Property -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle fw-semibold" href="#" data-bs-toggle="dropdown">
+          Property
+        </a>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" href="{{ route('homestay.properties') }}">Homestay</a></li>
+          <li><a class="dropdown-item" href="{{ route('kost.properties') }}">Kost</a></li>
+        </ul>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link fw-semibold" href="{{ route('tentang') }}">Tentang</a>
+      </li>
+
+      @guest
+        <li class="nav-item">
+          <a class="nav-link fw-semibold" href="{{ route('login') }}">Login</a>
+        </li>
+      @endguest
+
+      @auth
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle fw-semibold d-flex align-items-center gap-2" href="#"
+             data-bs-toggle="dropdown">
+            <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}"
+                 class="rounded-circle border" width="30" alt="Profile">
+            {{ Auth::user()->name }}
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ route('profileuser.show') }}">Profile</a></li>
+            <li>
+              <form id="logoutFormMobile" action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="dropdown-item text-danger">Logout</button>
+              </form>
+            </li>
+          </ul>
+        </li>
+      @endauth
+    </ul>
+  </div>
+</div>
 
 </body>
 </html>

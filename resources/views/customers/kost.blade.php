@@ -235,7 +235,7 @@
         </div>
       </form>
     </div>
-  </section>
+</section>
   
   <!-- Properties Section -->
   <section class="container mt-5">

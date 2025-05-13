@@ -92,13 +92,40 @@ class AuthController extends Controller
     // 1. Registrasi Pengguna
     public function insertRegister(Request $request)
     {
-        // Validasi input dasar
-        $validator = Validator::make($request->all(), [
+        // Aturan validasi
+        $rules = [
             'username' => 'required|string|max:255|unique:users',
             'email' => 'required|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'user_type_id' => 'required|exists:user_types,id',
-        ]);
+        ];
+
+        $messages = [
+            // Username
+            'username.required' => 'Username wajib diisi.',
+            'username.string' => 'Username harus berupa teks.',
+            'username.max' => 'Username maksimal 255 karakter.',
+            'username.unique' => 'Username sudah terpakai.',
+
+            // Email
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email maksimal 255 karakter.',
+            'email.unique' => 'Email sudah terdaftar.',
+
+            // Password
+            'password.required' => 'Password wajib diisi.',
+            'password.string' => 'Password harus berupa teks.',
+            'password.min' => 'Password harus minimal 6 karakter.',
+            'password.confirmed' => 'Password dan konfirmasi password tidak cocok.',
+
+            // User Type
+            'user_type_id.required' => 'Tipe user wajib dipilih.',
+            'user_type_id.exists' => 'Tipe user tidak valid.',
+        ];
+
+        // Jalankan validasi
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
@@ -209,29 +236,53 @@ class AuthController extends Controller
     // 5. Login Pengguna
     public function login(Request $request)
     {
-        $request->validate([
+        // Aturan validasi untuk login
+        $rules = [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
-        ]);
+        ];
+
+        // Pesan error dalam Bahasa Indonesia
+        $messages = [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password harus minimal 6 karakter.',
+        ];
+
+        // Jalankan validasi
+        $validator = Validator::make($request->all(), $rules, $messages);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator)
+                ->withInput();
+        }
 
         try {
             // Panggil SP untuk mencari pengguna
             $userData = DB::select("CALL login_user(?)", [$request->email]);
 
             if (empty($userData)) {
-                return redirect()->route('login')->with('error', 'Email tidak ditemukan.');
+                return back()
+                    ->withErrors(['email' => 'Email tidak ditemukan.'])
+                    ->withInput();
             }
 
             $user = (object) $userData[0];
 
             // Validasi password
             if (!Hash::check($request->password, $user->password)) {
-                return redirect()->route('login')->with('error', 'Password salah.');
+                return back()
+                    ->withErrors(['password' => 'Password salah.'])
+                    ->withInput();
             }
 
             // Cek status verifikasi email
             if (!$user->email_verified_at) {
-                return redirect()->route('login')->with('error', 'Email belum diverifikasi.');
+                return back()
+                    ->withErrors(['email' => 'Email belum diverifikasi.'])
+                    ->withInput();
             }
 
             // Login pengguna
@@ -247,7 +298,9 @@ class AuthController extends Controller
 
             return redirect()->route('dashboard')->with('success', 'Login berhasil!');
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()
+                ->withErrors(['login' => 'Terjadi kesalahan: ' . $e->getMessage()])
+                ->withInput();
         }
     }
 

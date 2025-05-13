@@ -8,8 +8,23 @@ use Illuminate\Support\Facades\Validator;
 
 class OwnerController extends Controller
 {
-    public function showOwnerpage() {
-        return view('owner.dashboard-owner'); 
+    public function showOwnerpage()
+    {
+        $userId = auth()->id(); // Ambil ID pengguna yang sedang login
+
+        try {
+            // Panggil stored procedure untuk ambil properti milik pemilik
+            $properties = DB::select('CALL view_propertiesByidowner(?)', [$userId]);
+
+            // Hitung jumlah properti
+            $propertyCount = count($properties);
+
+            // Kirim data ke view
+            return view('owner.dashboard-owner', compact('propertyCount'));
+        } catch (\Exception $e) {
+            // Jika error, tampilkan pesan error
+            return back()->withErrors(['error' => 'Gagal mengambil data properti: ' . $e->getMessage()]);
+        }
     }
 
     public function showPropertypage() {
@@ -378,6 +393,27 @@ public function get_FacilitiesByPropertyId($propertyId)
             'success' => false,
             'message' => 'Gagal mengambil fasilitas: ' . $e->getMessage()
         ], 500);
+    }
+}
+
+public function riwayat_transaksi(Request $request)
+{
+    $user = auth()->user();
+
+    // Pastikan user adalah pemilik properti
+    if (!$user || $user->user_role_id != 2) {
+        abort(403, 'Akses ditolak. Anda bukan pemilik properti.');
+    }
+
+    try {
+        // Panggil stored procedure
+        $bookings = DB::select('CALL GetBookingsByOwnerId(?)', [$user->id]);
+
+        // Kirim data ke view
+        return view('owner.booking', compact('bookings'));
+    } catch (\Exception $e) {
+        // Tampilkan error dengan jelas
+        return back()->withErrors(['error' => 'Gagal mengambil data booking: ' . $e->getMessage()]);
     }
 }
 

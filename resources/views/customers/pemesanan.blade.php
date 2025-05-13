@@ -1,7 +1,7 @@
 @extends('layouts.index-welcome')
 @section('content')
 
-@if ($errors->any())
+{{-- @if ($errors->any())
     <div class="alert alert-danger">
         <strong>Kesalahan:</strong>
         <ul>
@@ -10,7 +10,7 @@
             @endforeach
         </ul>
     </div>
-@endif
+@endif --}}
 
 <style>
     .step {
@@ -68,7 +68,7 @@
     .stepper {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 2px;
     }
 
     .circle {
@@ -90,7 +90,6 @@
 
     .line {
         flex: 1;
-        width: 300px;
         height: 3px;
         background-color: #dcdcdc;
     }
@@ -112,27 +111,32 @@
         right: 8px;
         z-index: 10;
     }
+    /* Breadcrumb */
     .breadcrumb {
-              display: flex;
-              flex-wrap: wrap;
-              list-style: none;
-            }
-        
-            .breadcrumb-item + .breadcrumb-item::before {
-              content: "›";
-              padding: 0 0.5rem;
-              color: #6c757d;
-            }
-        
-            .breadcrumb-item a {
-              text-decoration: none;
-              color: #6c757d;
-            }
-        
-            .breadcrumb-item.active {
-              color: #007bff;
-              pointer-events: none;
-            }
+        /* padding: 0.75rem 1.25rem; */
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); */
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #94a3b8;
+    }
+
+    .breadcrumb-item a {
+        color: #64748b;
+        transition: color 0.3s ease;
+    }
+
+    .breadcrumb-item a:hover {
+        color: #289A84;
+    }
+
+    .breadcrumb-item.active {
+        color: #289A84;
+        font-weight: 600;
+    }
 </style>
 
 <div class="container">
@@ -152,11 +156,55 @@
         <div class="circle">3</div>
     </div>
 
+    <style>
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-header {
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-body {
+            font-size: 0.95rem;
+        }
+
+        .alert-soft {
+            background-color: #f8fafc;
+            border-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-custom {
+            background: linear-gradient(135deg, #289A84, #38a169);
+            color: white;
+            border-radius: 30px;
+            padding: 0.5rem 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 9px 19px rgba(0, 0, 0, 0.4);
+        }
+
+    </style>
+
     <div class="row">
         <!-- Kolom Form Utama -->
         <div class="col-lg-8 col-md-12 order-1 order-lg-0">
-            <h4 class="mb-4">Isi Data Diri untuk Pemesanan</h4>
-            <div class="card rounded-5 mb-4">
+            <!-- Card 1: Isi Data Diri -->
+            <div class="card rounded-5 mb-4 shadow-sm">
+                <div class="card-header bg-white py-3 px-4">
+                    <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
+                        <i class="bi bi-person-fill me-2 text-primary"></i> Isi Data Diri
+                    </h5>
+                </div>
                 <div class="card-body p-4">
                     <form action="{{ route('booking.store') }}" method="POST">
                         @csrf
@@ -173,10 +221,20 @@
                             <input type="text" class="form-control rounded-3" id="name" name="name" required placeholder="Masukkan Nama Sesuai KTP">
                         </div>
 
-                        <!-- Input NIK -->
                         <div class="mb-3">
                             <label for="nik" class="form-label">NIK</label>
-                            <input type="text" class="form-control rounded-3" id="nik" name="nik" required placeholder="Masukkan No NIK">
+                            <input type="text" 
+                                class="form-control rounded-3 @error('nik') is-invalid @enderror" 
+                                id="nik" 
+                                name="nik" 
+                                required 
+                                placeholder="Masukkan No NIK (16 digit)"
+                                maxlength="16" 
+                                minlength="16"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 16)">
+                            @error('nik')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <!-- Input Email -->
@@ -185,7 +243,7 @@
                             <input type="email" class="form-control rounded-3" id="email" name="email" required placeholder="Masukkan Email">
                         </div>
 
-                        <!-- Siapa yang Menginap -->
+                        <!-- Siapa yang menginap -->
                         <div class="mb-3">
                             <label class="form-label"><strong>Siapa yang menginap?</strong></label><br>
                             <div class="form-check form-check-inline">
@@ -199,7 +257,7 @@
                         </div>
 
                         <!-- Nama Tamu (Jika "Lain") -->
-                        <div id="guest_option" style="display: none;">
+                        <div id="guest_option" class="d-none">
                             <div class="mb-3">
                                 <label for="namaTamuLain" class="form-label"><strong>Nama Lengkap Tamu</strong></label>
                                 <input type="text" class="form-control rounded-3" id="namaTamuLain" name="nama_tamu" placeholder="Masukkan Nama Sesuai KTP">
@@ -207,26 +265,48 @@
                         </div>
 
                         <!-- Alert -->
-                        <div class="alert alert-info">
+                        <div class="alert alert-info rounded-3">
                             Pada saat masuk property, mohon siapkan kartu identitas asli untuk verifikasi.
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Selected Rooms -->
-                        <h5 class="fw-bold mb-3">Kamar yang Dipilih</h5>
+                <!-- Card 2: Kamar yang Dipilih -->
+                <div class="card rounded-5 mb-4 shadow-sm">
+                    <div class="card-header bg-white py-3 px-4">
+                        <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
+                            <i class="bi bi-door-open-fill me-2 text-primary"></i> Kamar yang Dipilih
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
                         @foreach ($selectedRooms as $room)
-                        <div class="card mb-2 shadow-sm">
-                            <div class="card-body d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="mb-1">{{ $room['room_id'] }} | {{ $room['quantity'] }} kamar</h6>
-                                    <small class="text-muted">Harga: Rp{{ number_format($room['price_per_room'], 0, ',', '.') }}</small>
+                            <div class="card mb-2 shadow-sm">
+                                <div class="card-body d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ $room['room_id'] }} | {{ $room['quantity'] }} kamar</h6>
+                                        <small class="text-muted">Harga: Rp{{ number_format($room['price_per_room'], 0, ',', '.') }}</small>
+                                    </div>
+                                    <span class="badge bg-success bg-opacity-10 text-success fs-6">
+                                        Rp{{ number_format($room['subtotal'], 0, ',', '.') }}
+                                    </span>
                                 </div>
-                                <span class="badge bg-success bg-opacity-10 text-success fs-6">Rp{{ number_format($room['subtotal'], 0, ',', '.') }}</span>
                             </div>
-                        </div>
                         @endforeach
+                        <div class="mt-3 text-end">
+                            <a href="#" class="text-decoration-none text-success">Ubah Kamar</a>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Total Harga -->
-                        <div class="alert alert-soft mt-4 p-3 d-flex justify-content-between align-items-center">
+                <!-- Card 3: Total Harga -->
+                <div class="card rounded-5 mb-4 shadow-sm">
+                    <div class="card-header bg-white py-3 px-4">
+                        <h5 class="card-title mb-0 fw-bold text-dark d-flex align-items-center">
+                            <i class="bi bi-cash me-2 text-primary"></i> Ringkasan
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="alert alert-soft mt-4 p-3 d-flex justify-content-between align-items-center rounded-3">
                             <div>
                                 <strong>Total</strong><br>
                                 <span class="text-danger h4">
@@ -234,12 +314,12 @@
                                 </span>
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary btn-custom px-4">Lanjutkan</button>
+                                <button type="submit" class="btn btn-custom px-4">Lanjutkan</button>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <!-- Kolom Sisi Kanan -->
@@ -314,22 +394,43 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const radioButtons = document.querySelectorAll('input[name="guest_option"]');
-        const guestNameDiv = document.getElementById('guest_option');
-        const namaTamuInput = document.getElementById('namaTamuLain');
+    document.getElementById('bookingOrangLain').addEventListener('change', function () {
+    const guestInput = document.getElementById('guest_option');
+    if (this.checked) {
+        guestInput.classList.remove('d-none');
+    }
+});
 
-        radioButtons.forEach(radio => {
-            radio.addEventListener('change', function () {
-                if (this.value === 'lain') {
-                    guestNameDiv.style.display = 'block';
-                    namaTamuInput.required = true;
-                } else {
-                    guestNameDiv.style.display = 'none';
-                    namaTamuInput.required = false;
-                }
-            });
-        });
-    });
+document.getElementById('sayaTamu').addEventListener('change', function () {
+    const guestInput = document.getElementById('guest_option');
+    if (this.checked) {
+        guestInput.classList.add('d-none');
+    }
+});
+</script>
+
+<script>
+    document.getElementById('nik').addEventListener('input', function () {
+    const input = this;
+    const remaining = 16 - input.value.length;
+
+    const feedback = document.getElementById('nik-feedback');
+    if (!feedback) {
+        input.insertAdjacentHTML('afterend', `
+            <small id="nik-feedback" class="form-text text-muted">
+                Masukkan tepat 16 angka. Sisa: ${remaining} digit.
+            </small>
+        `);
+    } else {
+        feedback.innerHTML = `Masukkan tepat 16 angka. Sisa: ${remaining} digit.`;
+    }
+
+    if (input.value.length === 16) {
+        feedback.classList.add('text-success');
+        feedback.innerHTML = 'NIK valid.';
+    } else {
+        feedback.classList.remove('text-success');
+    }
+});
 </script>
 @endsection

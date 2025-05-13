@@ -4,7 +4,10 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OwnerController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -49,7 +52,8 @@ Route::middleware(['auth'])->group(function () {
 });
 
 
-Route::get('/search-property', [UserController::class, 'search'])->name('search');
+Route::get('/search-property', [UserController::class, 'search_homestay'])->name('search_homestay');
+Route::get('/cari-property', [UserController::class, 'search_welcomeProperty'])->name('search_welcomeProperty');
 
 
 
@@ -74,7 +78,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/riwayat-transaksi', [UserController::class, 'riwayat_transaksi'])->name('riwayat-transaksi.index');
 
 
-// owner
+// owner          
 Route::get('/dashboard-owner', [OwnerController::class, 'showOwnerpage'])->name('owner.dashboard');
 
 Route::get('/property', [OwnerController::class, 'showPropertypage'])->name('owner.property');
@@ -111,6 +115,25 @@ Route::delete('/property/room/delete', [OwnerController::class, 'deleteRoom'])->
 Route::get('/property/{property_id}/selected-facilities', [OwnerController::class, 'get_FacilitiesByPropertyId'])->name('property.get-selected-facilities');
 
 Route::get('/tentang', [UserController::class, 'tentang'])->name('tentang');
+
+
+Route::get('/booking/{booking_id}/payment', [PaymentController::class, 'payment_show'])->name('payment.show');
+Route::post('/payment/process', [PaymentController::class, 'process'])->name('payment.process');
+Route::get('/payment/success/{bookingId}', [PaymentController::class, 'success'])->name('payment.success');
+Route::post('/payment/notification', [PaymentController::class, 'notification']);
+
+Route::get('/pemilik/riwayat-transaksi', [OwnerController::class, 'riwayat_transaksi'])->name('pemilik.riwayat-transaksi');
+
+
+Route::get('/review/create', [ReviewController::class, 'create'])->name('review.create');
+
+// Submit ulasan
+Route::post('/review/store', [ReviewController::class, 'store'])->name('review.store');
+
+Route::get('/notifications', [NotificationController::class, 'getReviewNotifications']);
+
+Route::get('/riwayat-transaksi/{booking_id}', [UserController::class, 'detail_transaksi'])->name('riwayat-transaksi.detail');
+
 
 
 

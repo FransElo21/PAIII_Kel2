@@ -15,6 +15,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 @endif
+
     <style>
         :root {
             --primary: #6C63FF;
@@ -91,35 +92,41 @@
         .custom-radius {
             border-radius: 30px;
         }
+         /* Breadcrumb */
         .breadcrumb {
-              display: flex;
-              flex-wrap: wrap;
-              list-style: none;
-            }
-        
-            .breadcrumb-item + .breadcrumb-item::before {
-              content: "›";
-              padding: 0 0.5rem;
-              color: #6c757d;
-            }
-        
-            .breadcrumb-item a {
-              text-decoration: none;
-              color: #6c757d;
-            }
-        
-            .breadcrumb-item.active {
-              color: #007bff;
-              pointer-events: none;
-            }
+            /* padding: 0.75rem 1.25rem; */
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); */
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            color: #94a3b8;
+        }
+
+        .breadcrumb-item a {
+            color: #64748b;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: #289A84;
+        }
+
+        .breadcrumb-item.active {
+            color: #289A84;
+            font-weight: 600;
+        }
             html {
                 scroll-behavior: smooth;
             }
     </style>
+    
     <div class="container">
         <!-- Header Section -->    
         <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">Beranda</a></li>
+          <li class="breadcrumb-item"><a href="{{ route('landingpage') }}">Beranda</a></li>
           <li class="breadcrumb-item"><a href="#">Property</a></li>
           <li class="breadcrumb-item active" aria-current="page">{{ $property->property_name }}</li>
         </ol>
@@ -166,9 +173,11 @@
                     <h2 class="fw-bold mb-1">{{ $property->property_name }}</h2>
             
                     <!-- Lokasi -->
-                    <div class="d-flex align-items-center text-muted mb-2">
-                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>
-                        <span>{{ $locationData->subdis_name }}, {{ $locationData->city_name }}</span>
+                    <div class="d-flex align-items-center gap-2 text-muted mb-2 p-2 rounded-3 hover-effect">
+                        <span class="location-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </span>
+                        <span class="location-text">{{ $locationData->subdis_name }}, {{ $locationData->city_name }}</span>
                     </div>  
 
                     <!-- Rating -->
@@ -190,7 +199,7 @@
                         ) }}
                     </div>
                     <div class="text-muted small">/kamar/malam</div>
-                    <a href="#available-rooms" class="btn btn-primary mt-2" style="border-radius: 20px;">Lihat kamar</a>
+                    <a href="#sticky-date-picker" class="btn btn-primary mt-2" style="border-radius: 20px;">Lihat kamar</a>
                 </div>
             </div>            
             <hr>
@@ -220,20 +229,92 @@
                 </div>
                 <hr>
 
+                <style>
+                    /* CSS untuk sticky card */
+                    #sticky-date-picker {
+                        position: sticky;
+                        top: 70px; /* Sesuaikan dengan tinggi header */
+                        z-index: 999;
+                        transition: box-shadow 0.3s ease;
+                    }
+
+                    #sticky-date-picker.is-sticky {
+                        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+                        background: white !important;
+                    }
+
+                    @media (max-width: 768px) {
+                        #sticky-date-picker {
+                            position: relative;
+                            top: auto;
+                        }
+                    }
+                </style>
+
                 <!-- Check-in & Check-out -->
-                <div class="mb-4 fade-in">
-                    <h4 class="fw-bold mb-3">Pilih Tanggal Menginap</h4>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label for="checkInDate" class="form-label">Check-in</label>
-                            <input type="text" id="checkInDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
+                <div id="sticky-date-picker" class="mb-5 fade-in">
+                    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                        <div class="card-header bg-white py-3 px-4">
+                            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
+                                <i class="bi bi-calendar-event me-2 text-success"></i> Pilih Tanggal Menginap
+                            </h5>
                         </div>
-                        <div class="col-md-6">
-                            <label for="checkOutDate" class="form-label">Check-out</label>
-                            <input type="text" id="checkOutDate" class="form-control" placeholder="Pilih tanggal keluar" readonly>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <!-- Check-in -->
+                                <div class="col-md-6">
+                                    <label for="checkInDate" class="form-label fw-medium text-muted">Check-in</label>
+                                    <div class="input-group">
+                                        <input type="text" 
+                                            id="checkInDate" 
+                                            class="form-control border-end-0 rounded-start-pill ps-4" 
+                                            placeholder="Pilih tanggal masuk" 
+                                            readonly>
+                                        <span class="input-group-text bg-white border-start-0">
+                                            <i class="bi bi-calendar-event text-success fs-5"></i>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Check-out -->
+                                <div class="col-md-6">
+                                    <label for="checkOutDate" class="form-label fw-medium text-muted">Check-out</label>
+                                    <div class="input-group">
+                                        <input type="text" 
+                                            id="checkOutDate" 
+                                            class="form-control border-end-0 rounded-start-pill ps-4" 
+                                            placeholder="Pilih tanggal keluar" 
+                                            readonly>
+                                        <span class="input-group-text bg-white border-start-0">
+                                            <i class="bi bi-calendar-event text-success fs-5"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <script>
+                    const stickyCard = document.getElementById('sticky-date-picker');
+
+                    if (stickyCard) {
+                        const observer = new IntersectionObserver((entries) => {
+                            entries.forEach(entry => {
+                                if (!entry.isIntersecting) {
+                                    stickyCard.classList.add('is-sticky');
+                                } else {
+                                    stickyCard.classList.remove('is-sticky');
+                                }
+                            });
+                        }, {
+                            threshold: 0.1,
+                            rootMargin: "-80px 0px 0px 0px" // Sesuaikan dengan tinggi header
+                        });
+
+                        observer.observe(stickyCard);
+                    }
+                </script>
 
                 <!-- Available Rooms -->
                 <div id="available-rooms" class="mb-5 fade-in">
@@ -441,6 +522,23 @@
                         <div id="map" style="height: 400px;" class="rounded shadow-sm mb-4"></div>
                     @endif
                 </div>
+
+                <style>
+                    .map-section {
+                        position: relative;
+                        width: 100%;
+                        height: 500px; /* Sesuaikan tinggi map */
+                        overflow: hidden;
+                        z-index: 1; /* Lebih rendah dari header */
+                    }
+
+                    .map-canvas {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                    }
+                </style>
                 
                 <!-- Reviews -->
                 <div class="mb-5 fade-in">
@@ -499,7 +597,7 @@
                                             
                                             <!-- Konten Ulasan -->
                                             <p class="card-text text-muted mb-0">
-                                                {{ $review->content }}
+                                                {{ $review->comment }}
                                             </p>
                                         </div>
                                     </div>

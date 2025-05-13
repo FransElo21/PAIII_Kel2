@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +76,33 @@ class UserController extends Controller
         return view('customers/homestay', compact('properties', 'cities'));
     }
 
+    public function search_homestay(Request $request)
+    {
+        $keyword = $request->input('keyword');
+        $cityId = $request->input('city_id');
+        $priceMin = $request->input('price_min');
+        $priceMax = $request->input('price_max');
+        $orderBy = $request->input('order_by');
+        $type = 1;  // Menetapkan type = 1 (Homestay)
+
+        // Mengambil hasil pencarian properti dengan type 1 (Homestay)
+        $properties = DB::select("CALL sp_search_property(?, ?, ?, ?, ?, ?)", [
+            $keyword,
+            $cityId,
+            $priceMin,
+            $priceMax,
+            $orderBy,
+            $type  // Menambahkan parameter type untuk membatasi pencarian ke Homestay
+        ]);
+
+        // Mengambil daftar kota
+        $cities = DB::select('CALL sp_get_cities()');
+
+        // Mengirimkan data ke view
+        return view('customers.hasil-searchHomestay', compact('properties', 'cities'));
+    }
+ 
+
 
     public function kostProperty() {
         $properties = DB::select('CALL view_propertiesByType(?)', ['2']);
@@ -109,30 +137,7 @@ class UserController extends Controller
             'images' => $images
         ]);
     }    
-    
-    public function search(Request $request)
-    {
-        $keyword = $request->input('keyword');
-        $cityId = $request->input('city_id');
-        $priceMin = $request->input('price_min');
-        $priceMax = $request->input('price_max');
-        $orderBy = $request->input('order_by');
-    
-        // Mengambil hasil pencarian properti
-        $properties = DB::select("CALL sp_search_property(?, ?, ?, ?, ?)", [
-            $keyword,
-            $cityId,
-            $priceMin,
-            $priceMax,
-            $orderBy
-        ]);
-    
-        // Mengambil daftar kota
-        $cities = DB::select('CALL sp_get_cities()');
-    
-        // Mengirimkan data ke view
-        return view('customers.hasil-search', compact('properties', 'cities'));
-    }       
+         
 
     public function pemesanan(Request $request)
     {
@@ -201,7 +206,7 @@ class UserController extends Controller
         // Validasi input pengguna
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'nik' => 'required|string|max:20',
+            'nik' => 'required|digits:16',
             'email' => 'required|email|max:255',
             'guest_option' => 'required|in:saya,lain',
             'nama_tamu' => $request->guest_option === 'lain' ? 'required|string|max:255' : 'nullable',
@@ -282,15 +287,105 @@ class UserController extends Controller
     
     public function riwayat_transaksi(Request $request)
     {
-        // Ambil ID user yang login
+        $userId = auth()->id();
+        if (!$userId) {
+            return redirect()->route('login');
+        }
+
+        $status = $request->query('status');
+
+        $results = DB::select('CALL get_BookingsByUserIdtest(?, ?)', [$userId, $status]);
+
+        // Kelompokkan booking dan detail kamar
+        $bookings = collect($results)->groupBy('booking_id')->map(function ($group) {
+            $booking = $group->first();
+
+            // Ambil semua detail kamar
+            $details = $group->map(function ($item) {
+                return [
+                    'room_type' => $item->room_type,
+                    'quantity' => $item->quantity,
+                    'price_per_room' => $item->price_per_room,
+                    'subtotal' => $item->subtotal,
+                ];
+            });
+
+            return (object)[
+                'booking_id' => $booking->booking_id,
+                'property_name' => $booking->property_name,
+                'property_address' => $booking->property_address,
+                'check_in' => $booking->check_in,
+                'check_out' => $booking->check_out,
+                'total_price' => $booking->total_price,
+                'status' => $booking->status,
+                'guest_name' => $booking->guest_name,
+                'email' => $booking->email,
+                'reviewed' => $booking->reviewed,
+                'property_image' => $booking->property_image,
+                'rooms' => $details,
+            ];
+        })->values();
+
+        return view('customers.riwayat-transaksi', compact('bookings'));
+    }
+
+    public function search_welcomeProperty(Request $request)
+    {
+        // Ambil keyword dari input
+        $keyword = $request->input('keyword');
+
+        // Panggil SP dengan keyword
+        $results = DB::select('CALL SearchPropertiesByKeyword(?)', [$keyword]);
+
+        // Konversi ke koleksi Laravel
+        $properties = collect($results);
+
+        // Pagination manual (karena SP tidak mendukung pagination langsung)
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 12;
+        $currentItems = $properties->slice(($currentPage - 1) * $perPage, $perPage)->all();
+        $totalItems = $properties->count();
+
+        $paginatedProperties = new LengthAwarePaginator(
+            $currentItems,
+            $totalItems,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('customers.hasil-searchWelcome', compact('paginatedProperties', 'keyword'));
+    }
+
+    public function detail_transaksi($booking_id)
+    {
         $userId = auth()->id();
 
-        // Panggil SP dan ambil hasilnya
-        $bookings = DB::select('CALL get_BookingsByUserId(?)', [$userId]);
-        return view('customers.riwayat-transaksi' , compact('bookings'));
+        // Panggil SP untuk ambil 1 booking + semua detail kamarnya
+        $results = DB::select('CALL get_BookingsByUserIdtest(?, ?)', [$userId, null]);
+
+        // Filter hanya booking yang diminta
+        $filtered = collect($results)->where('booking_id', $booking_id);
+
+        if ($filtered->isEmpty()) {
+            abort(404, 'Transaksi tidak ditemukan.');
+        }
+
+        // Ambil booking utama
+        $booking = $filtered->first();
+
+        // Ambil daftar kamarnya
+        $rooms = $filtered->map(function ($item) {
+            return [
+                'room_type' => $item->room_type,
+                'quantity' => $item->quantity,
+                'price_per_room' => $item->price_per_room,
+                'subtotal' => $item->subtotal,
+            ];
+        });
+
+        return view('customers.detail-transaksi', compact('booking', 'rooms'));
     }
 
 
 }
-
-

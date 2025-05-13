@@ -187,9 +187,13 @@
         <p>Dapatkan infonya dan langsung sewa di <strong style="color: var(--secondary);">Hommie</strong>.</p>
         
         <!-- Search Form -->
-        <form action="" method="GET" class="search-input-group">
+        <form action="{{ route('search_welcomeProperty') }}" method="GET" class="search-input-group">
           <div class="input-group">
-            <input type="text" name="query" class="form-control" placeholder="Masukkan nama lokasi/area/alamat">
+            <input type="text" 
+                   name="keyword"
+                   class="form-control" 
+                   value="{{ request('keyword') }}" 
+                   placeholder="Masukkan nama lokasi/area/alamat">
             <button class="btn" type="submit">
               <i class="bi bi-search"></i>
             </button>

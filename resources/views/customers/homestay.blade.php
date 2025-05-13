@@ -184,7 +184,7 @@
       </h4>
   
       <!-- Form pencarian -->
-      <form method="GET" action="{{ route('search') }}">
+      <form method="GET" action="{{ route('search_homestay') }}">
         <div class="search-field">
           <label>Masukkan Kata Kunci</label>
           <div class="position-relative">
@@ -221,11 +221,21 @@
   
           <div class="search-field">
             <label>Harga</label>
-            <div class="price-range">
-              <input type="number" name="price_min" class="price-input" value="{{ request('price_min') }}" placeholder="Rp 0">
-              <span>-</span>
-              <input type="number" name="price_max" class="price-input" value="{{ request('price_max') }}" placeholder="Rp 10.000.000">
+            <div class="price-range d-flex align-items-center gap-2 mb-3">
+            <div class="flex-grow-1">
+                <input type="text" name="price_min" id="price_min" class="form-control price-input" 
+                      value="{{ number_format(request('price_min'), 0, ',', '.') }}" 
+                      placeholder="Rp 0">
             </div>
+
+            <span class="fw-semibold">-</span>
+
+            <div class="flex-grow-1">
+                <input type="text" name="price_max" id="price_max" class="form-control price-input" 
+                      value="{{ number_format(request('price_max'), 0, ',', '.') }}" 
+                      placeholder="Rp 10.000.000">
+            </div>
+        </div>
           </div>
         </div>
   
@@ -239,7 +249,7 @@
   
   <!-- Properties Section -->
   <section class="container mt-5">
-    <h3 class="fw-bold mb-4">Hasil Pencarian</h3>
+    <h3 class="fw-bold mb-4">Daftar Homestay</h3>
     
     <div class="row row-cols-1 row-cols-md-4 g-4">
         @foreach ($properties as $property)
@@ -312,5 +322,34 @@
       checkFade();
     });
   </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
+<script>
+    new AutoNumeric('#price_min', {
+        digitGroupSeparator: '.',
+        decimalCharacter: ',',
+        decimalPlaces: 0,
+        currencySymbol: 'Rp ',
+        currencySymbolPlacement: 'p',
+        unformatOnSubmit: true
+    });
+
+    new AutoNumeric('#price_max', {
+        digitGroupSeparator: '.',
+        decimalCharacter: ',',
+        decimalPlaces: 0,
+        currencySymbol: 'Rp ',
+        currencySymbolPlacement: 'p',
+        unformatOnSubmit: true
+    });
+</script>
+
+<style>
+    .price-range input {
+        text-align: right;
+        font-weight: 500;
+    }
+</style>
+
 
 @endsection

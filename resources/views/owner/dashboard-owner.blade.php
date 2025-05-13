@@ -50,7 +50,7 @@
                     <i class="bi bi-house-door-fill fs-4"></i>
                 </div>
                 <div>
-                    <h5 class="mb-0 fw-bold">24</h5>
+                    <h5 class="mb-0 fw-bold">{{ $propertyCount ?? 0 }}</h5>
                     <small class="text-muted">Total Properties</small>
                 </div>
             </div>

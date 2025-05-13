@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HomMie | Dashboard Owner</title>
   <!--favicon-->
-  <link rel="icon" href="{{ asset('assets/images/hommielogo-preview.png') }}" type="image/png">
+  <link rel="icon" href="{{ asset('assets/images/newLogohommie.png') }}" type="image/png">
   <!-- loader-->
   <link href="{{ asset('owner/assets/css/pace.min.css') }}" rel="stylesheet">
   <script src="{{ asset('owner/assets/js/pace.min.js') }}"></script>
@@ -339,7 +339,7 @@
    <aside class="sidebar-wrapper" data-simplebar="true">
     <div class="sidebar-header">
       <div class="logo-icon">
-        <img src="{{ asset('assets/images/hommielogo-preview.png') }}" class="logo-img" width="100" alt="Logo Hommie">
+        <img src="{{ asset('assets/images/newLogohommie.png') }}" alt="Hommie Logo" width="100" class="logo-img me-2 mt-3">
       </div>
       <div class="logo-name flex-grow-1">
         <h5 class="mb-0" style="color:#289A84;"><span style="color:#152C5B;">Hom</span >mie</h5>
@@ -361,6 +361,12 @@
               <a href="{{ route('owner.property') }}">
                   <div class="parent-icon"><i class="material-icons-outlined">inventory_2</i></div>
                   <div class="menu-title">Property</div>
+              </a>
+          </li>
+          <li>
+              <a href="{{ route('pemilik.riwayat-transaksi') }}">
+                  <div class="parent-icon"><i class="material-icons-outlined">paid</i></div>
+                  <div class="menu-title">Booking</div>
               </a>
           </li>
           <li>

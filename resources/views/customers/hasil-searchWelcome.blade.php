@@ -2,6 +2,8 @@
 
 @section('content')
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 <style>
     /* Breadcrumb */
     .breadcrumb {
@@ -179,21 +181,67 @@
             <p class="text-gray-500">Coba kata kunci lain atau ubah filter pencarian.</p>
         </div>
     @else
-        <div class="row row-cols-1 row-cols-md-3 g-4">
-            @foreach($paginatedProperties as $property)
-                <div class="col">
+        <div class="row row-cols-1 row-cols-md-4 g-4">
+            @foreach ($paginatedProperties as $property)
+                <div class="col fade-in">
                     <a href="{{ route('detail-property.show', $property->property_id) }}" class="text-decoration-none">
-                        <div class="card h-100 property-card">
-                            <!-- Image -->
-                            <img src="{{ asset('storage/' . $property->image) }}" 
-                                 class="card-img-top" 
-                                 alt="{{ $property->property_name }}">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden property-card position-relative transition-card">
+                            <!-- Badge Tipe Properti -->
+                            <span class="position-absolute top-0 start-0 m-2 px-3 py-1 bg-success text-white rounded-pill small shadow-sm">
+                                {{ $property->property_type }}
+                            </span>
                             
-                            <!-- Card Body -->
-                            <div class="card-body">
-                                <h6 class="card-title">{{ $property->property_name }}</h6>
-                                <p class="text-muted mb-1">{{ $property->city }}</p>
-                                <p class="mb-0 text-success fw-bold">Rp {{ number_format($property->min_price, 0, ',', '.') }}</p>
+                            <!-- Gambar Properti -->
+                            <div class="overflow-hidden" style="aspect-ratio: 3/2;">
+                                <img src="{{ asset('storage/' . $property->image) }}"
+                                    class="card-img-top object-fit-cover"
+                                    alt="{{ $property->property_name }}">
+                            </div>
+                            
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <h6 class="card-title mb-1 fw-bold text-dark">{{ $property->property_name }}</h6>
+                                    <small class="text-muted mb-2">{{ $property->subdistrict }}, Surabaya</small>
+                                    
+                                    <!-- Rating Section -->
+                                    <div class="d-flex align-items-center mt-2">
+                                        <div class="me-2">
+                                            @php
+                                                $avgRating = round($property->avg_rating, 1);
+                                                $fullStars = floor($avgRating);
+                                                $halfStar = ($avgRating - $fullStars) >= 0.5 ? true : false;
+                                            @endphp
+                                            
+                                            <!-- Bintang Penuh -->
+                                            @for ($i = 1; $i <= $fullStars; $i++)
+                                                <i class="fas fa-star text-warning me-1"></i>
+                                            @endfor
+                                            
+                                            <!-- Bintang Setengah -->
+                                            @if ($halfStar)
+                                                <i class="fas fa-star-half-alt text-warning me-1"></i>
+                                                @php $fullStars++ @endphp
+                                            @endif
+                                            
+                                            <!-- Bintang Kosong -->
+                                            @for ($i = $fullStars + 1; $i <= 5; $i++)
+                                                <i class="far fa-star text-warning me-1"></i>
+                                            @endfor
+                                        </div>
+                                        
+                                        <span class="text-muted small">
+                                            {{ $property->total_reviews > 0 ? number_format($avgRating, 1) . ' (' . $property->total_reviews . ')' : 'Belum ada ulasan' }}
+                                        </span>
+                                    </div>
+                                </div>
+        
+                                <div>
+                                    <p class="mb-1">
+                                        <span class="text-danger fw-bold fs-5">
+                                            IDR {{ number_format($property->min_price) }}
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </a>

@@ -76,7 +76,7 @@
                                                         <div class="fw-bold">{{ $booking->property_name }}</div>
                                                     </div>
                                                 </td>
-                                                {{-- <td>{{ $booking->user_name }}</td> --}}
+                                                <td>{{ $booking->guest_name }}</td>
                                                 <td>
                                                     {{ \Carbon\Carbon::parse($booking->check_in)->format('j M') }} - 
                                                     {{ \Carbon\Carbon::parse($booking->check_out)->format('j M Y') }}

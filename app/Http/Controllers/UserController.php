@@ -13,52 +13,52 @@ use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
     public function showDetailProperty($id)
-{
-    // 1. Ambil detail properti
-    $propertyResult = DB::select('CALL view_propertyById(?)', [$id]);
+    {
+        // 1. Ambil detail properti
+        $propertyResult = DB::select('CALL view_propertyById(?)', [$id]);
 
-    // 2. Jika properti tidak ditemukan
-    if (empty($propertyResult)) {
-        abort(404, 'Properti tidak ditemukan');
+        // 2. Jika properti tidak ditemukan
+        if (empty($propertyResult)) {
+            abort(404, 'Properti tidak ditemukan');
+        }
+
+        // 3. Ambil properti pertama
+        $property = $propertyResult[0];
+
+        // 4. Ambil lokasi lengkap
+        $locationData = optional(DB::select('CALL get_fullLocation(?)', [$property->subdis_id]))[0] ?? null;
+
+        // 5. Ambil gambar-gambar properti
+        $images = DB::select('CALL get_propertyImagesByProperty(?)', [$id]);
+
+        // 6. Ambil fasilitas properti
+        $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$id]);
+
+        // 7. Ambil kamar dan harga
+        $rooms = DB::select("CALL get_RoomsByPropertyId(?)", [$id]);
+        $property_roomPrice = DB::select("CALL get_MinRoomPriceByProperty(?)", [$id]);
+
+        // 8. Ambil ulasan
+        $reviews = DB::select("CALL get_PropertyReviews(?)", [$id]);
+
+        // 9. Hitung rating rata-rata
+        $ratingData = DB::select("CALL get_AverageRating(?)", [$id]);
+        $avgRating = $ratingData[0]->avg_rating ?? 0;
+        $totalReviews = $ratingData[0]->total_reviews ?? 0;
+
+        // 10. Kirim ke view
+        return view('customers/detail-property', compact(
+            'property',
+            'images',
+            'locationData',
+            'rooms',
+            'property_roomPrice',
+            'fasilitas',
+            'reviews',
+            'avgRating',
+            'totalReviews'
+        ));
     }
-
-    // 3. Ambil properti pertama
-    $property = $propertyResult[0];
-
-    // 4. Ambil lokasi lengkap
-    $locationData = optional(DB::select('CALL get_fullLocation(?)', [$property->subdis_id]))[0] ?? null;
-
-    // 5. Ambil gambar-gambar properti
-    $images = DB::select('CALL get_propertyImagesByProperty(?)', [$id]);
-
-    // 6. Ambil fasilitas properti
-    $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$id]);
-
-    // 7. Ambil kamar dan harga
-    $rooms = DB::select("CALL get_RoomsByPropertyId(?)", [$id]);
-    $property_roomPrice = DB::select("CALL get_MinRoomPriceByProperty(?)", [$id]);
-
-    // 8. Ambil ulasan
-    $reviews = DB::select("CALL get_PropertyReviews(?)", [$id]);
-
-    // 9. Hitung rating rata-rata
-    $ratingData = DB::select("CALL get_AverageRating(?)", [$id]);
-    $avgRating = $ratingData[0]->avg_rating ?? 0;
-    $totalReviews = $ratingData[0]->total_reviews ?? 0;
-
-    // 10. Kirim ke view
-    return view('customers/detail-property', compact(
-        'property',
-        'images',
-        'locationData',
-        'rooms',
-        'property_roomPrice',
-        'fasilitas',
-        'reviews',
-        'avgRating',
-        'totalReviews'
-    ));
-}
 
     public function homestayProperty() {
         $properties = DB::select('CALL view_propertiesByType(?)', ['1']);
@@ -83,26 +83,23 @@ class UserController extends Controller
         $priceMin = $request->input('price_min');
         $priceMax = $request->input('price_max');
         $orderBy = $request->input('order_by');
-        $type = 1;  // Menetapkan type = 1 (Homestay)
 
-        // Mengambil hasil pencarian properti dengan type 1 (Homestay)
-        $properties = DB::select("CALL sp_search_property(?, ?, ?, ?, ?, ?)", [
+        // Mengambil hasil pencarian properti hanya yang tipe 1 (homestay)
+        $properties = DB::select("CALL sp_search_propertytest(?, ?, ?, ?, ?, ?)", [
             $keyword,
             $cityId,
             $priceMin,
             $priceMax,
             $orderBy,
-            $type  // Menambahkan parameter type untuk membatasi pencarian ke Homestay
+            1 // Filter untuk property type 1 (homestay)
         ]);
 
         // Mengambil daftar kota
         $cities = DB::select('CALL sp_get_cities()');
 
         // Mengirimkan data ke view
-        return view('customers.hasil-searchHomestay', compact('properties', 'cities'));
+        return view('customers.hasil-search-homestay', compact('properties', 'cities'));
     }
- 
-
 
     public function kostProperty() {
         $properties = DB::select('CALL view_propertiesByType(?)', ['2']);
@@ -118,6 +115,31 @@ class UserController extends Controller
         }
     
         return view('customers/kost', compact('properties','cities'));
+    }
+
+    public function search_kost(Request $request)
+    {
+        $keyword = $request->input('keyword');
+        $cityId = $request->input('city_id');
+        $priceMin = $request->input('price_min');
+        $priceMax = $request->input('price_max');
+        $orderBy = $request->input('order_by');
+
+        // Mengambil hasil pencarian properti hanya yang tipe 1 (homestay)
+        $properties = DB::select("CALL sp_search_propertytest(?, ?, ?, ?, ?, ?)", [
+            $keyword,
+            $cityId,
+            $priceMin,
+            $priceMax,
+            $orderBy,
+            2 // Filter untuk property type 1 (homestay)
+        ]);
+
+        // Mengambil daftar kota
+        $cities = DB::select('CALL sp_get_cities()');
+
+        // Mengirimkan data ke view
+        return view('customers.hasil-search-kost', compact('properties', 'cities'));
     }
 
     public function ajukanSewa($property_id) {
@@ -331,19 +353,23 @@ class UserController extends Controller
 
     public function search_welcomeProperty(Request $request)
     {
-        // Ambil keyword dari input
         $keyword = $request->input('keyword');
 
-        // Panggil SP dengan keyword
         $results = DB::select('CALL SearchPropertiesByKeyword(?)', [$keyword]);
-
-        // Konversi ke koleksi Laravel
         $properties = collect($results);
 
-        // Pagination manual (karena SP tidak mendukung pagination langsung)
+        // Tambahkan rating ke tiap property
+        foreach ($properties as &$property) {
+            $ratingData = DB::select("CALL get_AverageRating(?)", [$property->property_id]);
+            $property->avg_rating = $ratingData[0]->avg_rating ?? 0;
+            $property->total_reviews = $ratingData[0]->total_reviews ?? 0;
+        }
+        unset($property);
+
+        // Pagination manual
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         $perPage = 12;
-        $currentItems = $properties->slice(($currentPage - 1) * $perPage, $perPage)->all();
+        $currentItems = $properties->slice(($currentPage - 1) * $perPage, $perPage)->values();
         $totalItems = $properties->count();
 
         $paginatedProperties = new LengthAwarePaginator(
@@ -354,7 +380,10 @@ class UserController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        return view('customers.hasil-searchWelcome', compact('paginatedProperties', 'keyword'));
+        return view('customers.hasil-searchWelcome', [
+            'paginatedProperties' => $paginatedProperties,
+            'keyword' => $keyword
+        ]);
     }
 
     public function detail_transaksi($booking_id)

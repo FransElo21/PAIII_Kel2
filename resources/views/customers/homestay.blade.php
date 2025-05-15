@@ -220,23 +220,29 @@
           </div>
   
           <div class="search-field">
-            <label>Harga</label>
-            <div class="price-range d-flex align-items-center gap-2 mb-3">
-            <div class="flex-grow-1">
-                <input type="text" name="price_min" id="price_min" class="form-control price-input" 
-                      value="{{ number_format(request('price_min'), 0, ',', '.') }}" 
-                      placeholder="Rp 0">
-            </div>
-
-            <span class="fw-semibold">-</span>
-
-            <div class="flex-grow-1">
-                <input type="text" name="price_max" id="price_max" class="form-control price-input" 
-                      value="{{ number_format(request('price_max'), 0, ',', '.') }}" 
-                      placeholder="Rp 10.000.000">
-            </div>
-        </div>
-          </div>
+  <label>Harga</label>
+  <div class="price-range">
+    <input 
+      type="text" 
+      name="price_min" 
+      class="price-input" 
+      value="{{ request('price_min') ? 'Rp ' . number_format(request('price_min'), 0, ',', '.') : '' }}" 
+      placeholder="Rp 0" 
+      min="0" 
+      oninput="formatPrice(this)"
+    >
+    <span>-</span>
+    <input 
+      type="text" 
+      name="price_max" 
+      class="price-input" 
+      value="{{ request('price_max') ? 'Rp ' . number_format(request('price_max'), 0, ',', '.') : '' }}" 
+      placeholder="Rp 10.000.000" 
+      min="0" 
+      oninput="formatPrice(this)"
+    >
+  </div>
+</div>
         </div>
   
         <!-- Tombol submit -->
@@ -322,34 +328,31 @@
       checkFade();
     });
   </script>
-  
-  <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0"></script>
-<script>
-    new AutoNumeric('#price_min', {
-        digitGroupSeparator: '.',
-        decimalCharacter: ',',
-        decimalPlaces: 0,
-        currencySymbol: 'Rp ',
-        currencySymbolPlacement: 'p',
-        unformatOnSubmit: true
-    });
 
-    new AutoNumeric('#price_max', {
-        digitGroupSeparator: '.',
-        decimalCharacter: ',',
-        decimalPlaces: 0,
-        currencySymbol: 'Rp ',
-        currencySymbolPlacement: 'p',
-        unformatOnSubmit: true
-    });
+  <script>
+  // Fungsi untuk format harga dengan pemisah ribuan
+  function formatPrice(input) {
+    let value = input.value.replace(/\D/g, ''); // Menghapus karakter non-digit
+    value = value.replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Menambahkan pemisah ribuan
+    input.value = 'Rp ' + value; // Menambahkan "Rp" di depan nilai
+  }
 </script>
 
-<style>
-    .price-range input {
-        text-align: right;
-        font-weight: 500;
-    }
-</style>
+
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+  const minInput = document.querySelector('input[name="price_min"]');
+  const maxInput = document.querySelector('input[name="price_max"]');
+
+  // Hilangkan karakter non-digit agar MySQL menerima sebagai angka valid
+  if(minInput.value){
+    minInput.value = minInput.value.replace(/[^\d]/g, '');
+  }
+  if(maxInput.value){
+    maxInput.value = maxInput.value.replace(/[^\d]/g, '');
+  }
+});
+</script>
 
 
 @endsection

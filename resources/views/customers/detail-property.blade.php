@@ -253,47 +253,44 @@
 
                 <!-- Check-in & Check-out -->
                 <div id="sticky-date-picker" class="mb-5 fade-in">
-                    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-                        <div class="card-header bg-white py-3 px-4">
-                            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
-                                <i class="bi bi-calendar-event me-2 text-success"></i> Pilih Tanggal Menginap
-                            </h5>
-                        </div>
-                        <div class="card-body p-4">
-                            <div class="row g-3">
-                                <!-- Check-in -->
-                                <div class="col-md-6">
-                                    <label for="checkInDate" class="form-label fw-medium text-muted">Check-in</label>
-                                    <div class="input-group">
-                                        <input type="text" 
-                                            id="checkInDate" 
-                                            class="form-control border-end-0 rounded-start-pill ps-4" 
-                                            placeholder="Pilih tanggal masuk" 
-                                            readonly>
-                                        <span class="input-group-text bg-white border-start-0">
-                                            <i class="bi bi-calendar-event text-success fs-5"></i>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Check-out -->
-                                <div class="col-md-6">
-                                    <label for="checkOutDate" class="form-label fw-medium text-muted">Check-out</label>
-                                    <div class="input-group">
-                                        <input type="text" 
-                                            id="checkOutDate" 
-                                            class="form-control border-end-0 rounded-start-pill ps-4" 
-                                            placeholder="Pilih tanggal keluar" 
-                                            readonly>
-                                        <span class="input-group-text bg-white border-start-0">
-                                            <i class="bi bi-calendar-event text-success fs-5"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4">
+            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
+                <i class="bi bi-calendar-event me-2 text-success"></i> Pilih Tanggal Menginap
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+                @if($property->property_type_id == 1)
+                    <!-- Homestay -->
+                    <div class="col-md-6">
+                        <label for="checkInDate" class="form-label fw-medium text-muted">Check-in</label>
+                        <input type="text" id="checkInDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
                     </div>
-                </div>
+                    <div class="col-md-6">
+                        <label for="checkOutDate" class="form-label fw-medium text-muted">Check-out</label>
+                        <input type="text" id="checkOutDate" class="form-control" placeholder="Pilih tanggal keluar" readonly>
+                    </div>
+                @else
+                    <!-- Kost -->
+                    <div class="col-md-6">
+                        <label for="startDate" class="form-label fw-medium text-muted">Tanggal Masuk</label>
+                        <input type="text" id="startDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="duration" class="form-label fw-medium text-muted">Durasi Sewa</label>
+                        <select id="duration" class="form-select">
+                            @for($i = 1; $i <= 12; $i++)
+                                <option value="{{ $i }}">{{ $i }} Bulan</option>
+                            @endfor
+                        </select>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
 
                 <script>
                     const stickyCard = document.getElementById('sticky-date-picker');
@@ -760,22 +757,20 @@
     let diffDays = 0;
 
     function showQuantityControls(roomId, pricePerRoom) {
-        // Ambil ID pengguna dari Blade (jika null, berarti belum login)
-        const userId = "{{ $userId }}"; 
+        const userId = "{{ $userId }}";
 
-        // Cek apakah pengguna sudah login
         if (!userId) {
             Swal.fire({
                 title: 'Login Diperlukan',
                 text: 'Anda harus login terlebih dahulu untuk memesan kamar.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#007BFF', // Warna biru untuk tombol "Login Sekarang"
+                confirmButtonColor: '#007BFF',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Login Sekarang',
                 cancelButtonText: 'Batal',
                 customClass: {
-                    popup: 'custom-swal-popup' // Kelas kustom untuk modal
+                    popup: 'custom-swal-popup'
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -785,23 +780,30 @@
             return;
         }
 
-        // Lanjutkan logika asli jika sudah login
-        const quantityArea = document.getElementById(`quantity-area-${roomId}`);
-        const btnArea = document.getElementById(`btn-area-${roomId}`);
-        
-        // Validasi tanggal
-        const checkIn = document.getElementById("checkInDate").value;
-        const checkOut = document.getElementById("checkOutDate").value;
-        if (!checkIn || !checkOut) {
-            alert("Silakan pilih tanggal check-in dan check-out terlebih dahulu.");
+        const typeId = {{ $property->property_type_id }};
+        let isValid = false;
+
+        if (typeId === 1) {
+            const checkIn = document.getElementById("checkInDate").value;
+            const checkOut = document.getElementById("checkOutDate").value;
+            if (checkIn && checkOut) isValid = true;
+        } else {
+            const startDate = document.getElementById("startDate").value;
+            const duration = document.getElementById("duration").value;
+            if (startDate && duration) isValid = true;
+        }
+
+        if (!isValid) {
+            alert("Silakan lengkapi tanggal pemesanan terlebih dahulu.");
             return;
         }
 
-        // Tampilkan input kuantitas dan sembunyikan tombol "Pilih"
+        const quantityArea = document.getElementById(`quantity-area-${roomId}`);
+        const btnArea = document.getElementById(`btn-area-${roomId}`);
+
         quantityArea.classList.remove("d-none");
         if (btnArea) btnArea.classList.add("d-none");
 
-        // Set nilai kuantitas ke 1 dan perbarui total harga
         const input = document.getElementById(`quantity-input-${roomId}`);
         if (input) {
             input.value = 1;
@@ -842,63 +844,72 @@
     }
 
     function updateTotalPrice() {
-        const checkIn = document.getElementById("checkInDate").value;
-        const checkOut = document.getElementById("checkOutDate").value;
-
-        if (!checkIn || !checkOut || checkOut <= checkIn) {
-            return;
-        }
-
-        const start = new Date(checkIn);
-        const end = new Date(checkOut);
-        diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-
+        const typeId = {{ $property->property_type_id }};
         let totalPrice = 0;
         const summaryContainer = document.getElementById("selected-rooms-summary");
-        summaryContainer.innerHTML = ""; // Kosongkan dulu
-
-        const fragment = document.createDocumentFragment(); // Lebih efisien daripada innerHTML +=
+        summaryContainer.innerHTML = "";
+        const fragment = document.createDocumentFragment();
 
         const inputs = document.querySelectorAll(".quantity-input");
 
-        inputs.forEach(input => {
-            const qty = parseInt(input.value);
-            const price = parseFloat(input.dataset.price);
-            const roomId = input.id.replace("quantity-input-", "");
+        if (typeId === 1) {
+            const checkIn = document.getElementById("checkInDate").value;
+            const checkOut = document.getElementById("checkOutDate").value;
+            if (!checkIn || !checkOut || checkOut <= checkIn) return;
+            const start = new Date(checkIn);
+            const end = new Date(checkOut);
+            diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
 
-            if (!isNaN(qty) && !isNaN(price) && qty > 0) {
-                const roomNameEl = input.closest('.card')?.querySelector('.card-title');
-                const roomName = roomNameEl ? roomNameEl.innerText.trim() : "Tipe Kamar";
-                const roomTotal = qty * price * diffDays;
+            inputs.forEach(input => {
+                const qty = parseInt(input.value);
+                const price = parseFloat(input.dataset.price);
+                const roomName = input.closest('.card')?.querySelector('.card-title')?.innerText || "Kamar";
+                if (qty > 0) {
+                    const subtotal = qty * price * diffDays;
+                    totalPrice += subtotal;
+                    const div = document.createElement("div");
+                    div.className = "d-flex justify-content-between";
+                    div.innerHTML = `<small>${roomName} x ${qty}</small><small>Rp${subtotal.toLocaleString('id-ID')}</small>`;
+                    fragment.appendChild(div);
+                }
+            });
 
-                totalPrice += roomTotal;
-
-                const div = document.createElement("div");
-                div.className = "d-flex justify-content-between";
-                div.innerHTML = `
-                    <small>${roomName} x ${qty} kamar</small>
-                    <small>Rp${roomTotal.toLocaleString('id-ID')}</small>`;
-                fragment.appendChild(div);
+            if (diffDays > 0) {
+                fragment.appendChild(document.createElement("hr"));
+                const durasi = document.createElement("div");
+                durasi.className = "d-flex justify-content-between text-muted";
+                durasi.innerHTML = `<small>Durasi</small><small>${diffDays} malam</small>`;
+                fragment.appendChild(durasi);
             }
-        });
 
-        // Tambahkan durasi malam
-        if (diffDays > 0) {
-            const hr = document.createElement("hr");
-            hr.className = "my-1";
-            fragment.appendChild(hr);
+        } else {
+            const startDate = document.getElementById("startDate").value;
+            const duration = parseInt(document.getElementById("duration").value);
+            if (!startDate || !duration) return;
 
-            const durasiDiv = document.createElement("div");
-            durasiDiv.className = "d-flex justify-content-between text-muted";
-            durasiDiv.innerHTML = `
-                <small>Durasi Menginap</small>
-                <small>${diffDays} malam</small>`;
-            fragment.appendChild(durasiDiv);
+            inputs.forEach(input => {
+                const qty = parseInt(input.value);
+                const price = parseFloat(input.dataset.price);
+                const roomName = input.closest('.card')?.querySelector('.card-title')?.innerText || "Kamar";
+                if (qty > 0) {
+                    const subtotal = qty * price * duration;
+                    totalPrice += subtotal;
+                    const div = document.createElement("div");
+                    div.className = "d-flex justify-content-between";
+                    div.innerHTML = `<small>${roomName} x ${qty}</small><small>Rp${subtotal.toLocaleString('id-ID')}</small>`;
+                    fragment.appendChild(div);
+                }
+            });
+
+            fragment.appendChild(document.createElement("hr"));
+            const durasi = document.createElement("div");
+            durasi.className = "d-flex justify-content-between text-muted";
+            durasi.innerHTML = `<small>Durasi</small><small>${duration} bulan</small>`;
+            fragment.appendChild(durasi);
         }
 
         summaryContainer.appendChild(fragment);
 
-        // Update total harga
         const totalDisplay = document.getElementById("total-harga-footer");
         const totalFooter = document.getElementById("total-footer");
 
@@ -911,53 +922,69 @@
     }
 
     function prosesPemesanan() {
-    const checkIn = document.getElementById("checkInDate").value;
-    const checkOut = document.getElementById("checkOutDate").value;
-    
-    // Validasi tanggal
-    if (!checkIn || !checkOut || checkOut <= checkIn) {
-        alert("Tanggal check-in dan check-out harus valid.");
-        return;
-    }
+        const typeId = {{ $property->property_type_id }};
+        const propertyId = "{{ $propertyId }}";
+        const userId = "{{ $userId }}";
+        let selectedRooms = [];
+        let totalPrice = 0;
 
-    let selectedRooms = [];
-    let totalPrice = 0;
+        if (typeId === 1) {
+            // Homestay
+            const checkIn = document.getElementById("checkInDate").value;
+            const checkOut = document.getElementById("checkOutDate").value;
+            if (!checkIn || !checkOut || checkOut <= checkIn) {
+                alert("Isi tanggal check-in dan check-out");
+                return;
+            }
 
-    // Ambil data kamar yang dipilih
-    document.querySelectorAll(".quantity-input").forEach(input => {
-        const roomId = input.id.replace("quantity-input-", "");
-        const qty = parseInt(input.value);
-        const price = parseFloat(input.dataset.price);
-        
-        if (!isNaN(qty) && !isNaN(price) && qty > 0) {
-            const roomTotal = qty * price * diffDays; // Hitung subtotal
-            totalPrice += roomTotal;
-            selectedRooms.push({
-                room_id: roomId,
-                quantity: qty,
-                price_per_room: price,
-                subtotal: roomTotal
+            document.querySelectorAll(".quantity-input").forEach(input => {
+                const qty = parseInt(input.value);
+                const price = parseFloat(input.dataset.price);
+                const roomId = input.dataset.roomId;
+                if (qty > 0) {
+                    const subtotal = qty * price * diffDays;
+                    totalPrice += subtotal;
+                    selectedRooms.push({ room_id: roomId, quantity: qty, price_per_room: price, subtotal });
+                }
             });
+
+            if (selectedRooms.length === 0) {
+                alert("Pilih kamar terlebih dahulu.");
+                return;
+            }
+
+            window.location.href = `/pemesanan?rooms=${encodeURIComponent(JSON.stringify(selectedRooms))}&total_price=${totalPrice}&property_id=${propertyId}&user_id=${userId}&check_in=${checkIn}&check_out=${checkOut}`;
+        
+        } else {
+            // Kost
+            const startDate = document.getElementById("startDate").value;
+            const duration = parseInt(document.getElementById("duration").value);
+
+            if (!startDate || !duration || duration <= 0) {
+                alert("Isi tanggal dan durasi kost.");
+                return;
+            }
+
+            document.querySelectorAll(".quantity-input").forEach(input => {
+                const qty = parseInt(input.value);
+                const price = parseFloat(input.dataset.price);
+                const roomId = input.dataset.roomId;
+                if (qty > 0 && roomId) {
+                    const subtotal = qty * price * duration;
+                    totalPrice += subtotal;
+                    selectedRooms.push({ room_id: roomId, quantity: qty, price_per_room: price, subtotal });
+                }
+            });
+
+            if (selectedRooms.length === 0) {
+                alert("Pilih kamar terlebih dahulu.");
+                return;
+            }
+
+            window.location.href = `/pemesanan-kost?rooms=${encodeURIComponent(JSON.stringify(selectedRooms))}&total_price=${totalPrice}&property_id=${propertyId}&user_id=${userId}&start_date=${startDate}&duration=${duration}`;
         }
-    });
-
-    // Validasi minimal 1 kamar dipilih
-    if (selectedRooms.length === 0) {
-        alert("Silakan pilih minimal 1 kamar.");
-        return;
     }
 
-    // Ambil data dari Blade
-    const propertyId = "{{ $propertyId }}";
-    const userId = "{{ $userId }}";
-
-    // Encode data untuk URL
-    const encodedRooms = encodeURIComponent(JSON.stringify(selectedRooms));
-    const encodedTotalPrice = encodeURIComponent(totalPrice.toFixed(2));
-
-    // Redirect ke halaman pemesanan dengan semua parameter
-    window.location.href = `/pemesanan?rooms=${encodedRooms}&total_price=${encodedTotalPrice}&property_id=${propertyId}&user_id=${userId}&check_in=${checkIn}&check_out=${checkOut}`;
-    }
 
     function validateStock() {
         let hasInvalidStock = false;
@@ -1021,5 +1048,41 @@
         onChange: updateTotalPrice
     });
 </script>
+
+<script>
+@if($property->property_type_id == 1)
+    flatpickr("#checkInDate", {
+        altInput: true,
+        altFormat: "d F Y",
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        onChange: function(selectedDates, dateStr) {
+            flatpickr("#checkOutDate", {
+                altInput: true,
+                altFormat: "d F Y",
+                dateFormat: "Y-m-d",
+                minDate: dateStr,
+                onChange: updateTotalPrice
+            });
+            updateTotalPrice();
+        }
+    });
+    flatpickr("#checkOutDate", {
+        altInput: true,
+        altFormat: "d F Y",
+        dateFormat: "Y-m-d",
+        onChange: updateTotalPrice
+    });
+@else
+    flatpickr("#startDate", {
+        altInput: true,
+        altFormat: "d F Y",
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        onChange: updateTotalPrice
+    });
+@endif
+</script>
+
 
 @endsection

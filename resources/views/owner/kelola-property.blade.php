@@ -688,25 +688,29 @@
 
             // Hapus kamar
             document.addEventListener('click', function (e) {
-                if (e.target.closest('.confirm-delete')) {
-                    const button = e.target.closest('.confirm-delete');
-                    const form = button.closest('form');
+            document.addEventListener('click', function (e) {
+            if (e.target.closest('.confirm-delete')) {
+                const button = e.target.closest('.confirm-delete');
+                const form = button.closest('form');
 
-                    Swal.fire({
-                        title: 'Apakah Anda yakin?',
-                        text: "Data kamar akan dihapus!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Ya, hapus!'
-                    }).then((result) => {
-                        if (result.isConfirmed && form) {
-                            form.submit(); // Kirim form DELETE ke server
-                        }
-                    });
-                }
-            });
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Data kamar akan dihapus!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, hapus!'
+                }).then((result) => {
+                    if (result.isConfirmed && form) {
+                        form.submit(); // Kirim form DELETE ke server
+                    }
+                });
+            }
+});
+
+});
+
         });
 
         // Format harga

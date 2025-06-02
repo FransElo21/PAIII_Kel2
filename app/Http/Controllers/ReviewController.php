@@ -24,7 +24,7 @@ class ReviewController extends Controller
         $booking = $booking[0]; // Ambil objek dari array
 
         // Validasi status dan tanggal check-out
-        if ($booking->status !== 'completed' || !\Carbon\Carbon::parse($booking->check_out)->isPast()) {
+        if ($booking->status !== 'Selesai' || !\Carbon\Carbon::parse($booking->check_out)->isPast()) {
             abort(403, 'Ulasan hanya bisa diberikan setelah check-out selesai.');
         }
 
@@ -52,7 +52,7 @@ class ReviewController extends Controller
         $booking = $booking[0];
 
         // Validasi status dan apakah sudah diulas
-        if ($booking->status !== 'completed' || $booking->reviewed) {
+        if ($booking->status !== 'Selesai' || $booking->reviewed) {
             return back()->withErrors(['error' => 'Ulasan tidak valid.']);
         }
 

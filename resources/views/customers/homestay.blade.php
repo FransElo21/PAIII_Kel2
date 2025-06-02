@@ -20,7 +20,6 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow-md);
       padding: 2rem;
-      margin-top: -3rem;
     }
   
     .search-container h4 {
@@ -179,8 +178,8 @@
 <!-- Search Form Section -->
 <section class="container mt-5">
     <div class="search-container">
-      <h4 class="fw-bold mb-3">
-        <i class="fas fa-home me-2 text-success"></i> Cari Homestay Murah
+      <h4 class="fw-bold mb-4">
+        <i class="fas fa-home text-success"></i> Cari Homestay Murah
       </h4>
   
       <!-- Form pencarian -->
@@ -220,29 +219,29 @@
           </div>
   
           <div class="search-field">
-  <label>Harga</label>
-  <div class="price-range">
-    <input 
-      type="text" 
-      name="price_min" 
-      class="price-input" 
-      value="{{ request('price_min') ? 'Rp ' . number_format(request('price_min'), 0, ',', '.') : '' }}" 
-      placeholder="Rp 0" 
-      min="0" 
-      oninput="formatPrice(this)"
-    >
-    <span>-</span>
-    <input 
-      type="text" 
-      name="price_max" 
-      class="price-input" 
-      value="{{ request('price_max') ? 'Rp ' . number_format(request('price_max'), 0, ',', '.') : '' }}" 
-      placeholder="Rp 10.000.000" 
-      min="0" 
-      oninput="formatPrice(this)"
-    >
-  </div>
-</div>
+          <label>Harga</label>
+          <div class="price-range">
+            <input 
+              type="text" 
+              name="price_min" 
+              class="price-input" 
+              value="{{ request('price_min') ? 'Rp ' . number_format(request('price_min'), 0, ',', '.') : '' }}" 
+              placeholder="Rp 0" 
+              min="0" 
+              oninput="formatPrice(this)"
+            >
+            <span>-</span>
+            <input 
+              type="text" 
+              name="price_max" 
+              class="price-input" 
+              value="{{ request('price_max') ? 'Rp ' . number_format(request('price_max'), 0, ',', '.') : '' }}" 
+              placeholder="Rp 10.000.000" 
+              min="0" 
+              oninput="formatPrice(this)"
+            >
+          </div>
+          </div>
         </div>
   
         <!-- Tombol submit -->

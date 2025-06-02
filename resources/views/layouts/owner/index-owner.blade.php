@@ -299,34 +299,60 @@
             </div>
           </div>
         </li>
-        @auth
-          <li class="nav-item dropdown">
-              <a href="javascript:;" class="dropdown-toggle dropdown-toggle-nocaret" data-bs-toggle="dropdown">
-                <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}" 
-                    class="rounded-circle p-1 border" width="45" height="45" alt="">
-              </a>
-              <div class="dropdown-menu dropdown-user dropdown-menu-end shadow">
-                  <a class="dropdown-item gap-2 py-2" href="javascript:;">
-                      <div class="text-center">
-                        <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}" 
-                        class="rounded-circle p-1 border" width="45" height="45" alt="">
-                          <h5 class="user-name mb-0 fw-bold">Hello, {{ Auth::user()->name }}</h5>
-                      </div>
-                  </a>
-                  <hr class="dropdown-divider">
-                  <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="">
-                      <i class="material-icons-outlined">person_outline</i>Profile
-                  </a>
-                  <hr class="dropdown-divider">
-                  <form action="{{ route('logout') }}" method="POST">
-                      @csrf
-                      <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2">
-                          <i class="material-icons-outlined">power_settings_new</i>Logout
-                      </button>
-                  </form>
-              </div>
-          </li>
-        @endauth
+        @php
+    // Ambil nama user dan buat inisial
+    $name = Auth::user()->name;
+    $initials = collect(explode(' ', $name))
+                   ->map(fn($part) => strtoupper(substr($part, 0, 1)))
+                   ->take(2)
+                   ->implode('');
+@endphp
+
+@auth
+  <li class="nav-item dropdown">
+    <a href="javascript:;" class="dropdown-toggle dropdown-toggle-nocaret" data-bs-toggle="dropdown">
+      @if(Auth::user()->profile_picture)
+        <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}"
+             class="rounded-circle p-1 border"
+             width="45" height="45" alt="Profile">
+      @else
+        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center"
+             style="width:45px; height:45px; font-weight:600;">
+          {{ $initials }}
+        </div>
+      @endif
+    </a>
+    <div class="dropdown-menu dropdown-user dropdown-menu-end shadow">
+      <a class="dropdown-item gap-2 py-2" href="javascript:;">
+        <div class="text-center">
+          @if(Auth::user()->profile_picture)
+            <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}"
+                 class="rounded-circle p-1 border"
+                 width="60" height="60" alt="Profile">
+          @else
+            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto"
+                 style="width:60px; height:60px; font-size:1.5rem; font-weight:600;">
+              {{ $initials }}
+            </div>
+          @endif
+          <h5 class="user-name mb-0 fw-bold">Hello, {{ Auth::user()->name }}</h5>
+        </div>
+      </a>
+      <hr class="dropdown-divider">
+      <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('profileuser.show') }}">
+        <i class="material-icons-outlined">person_outline</i> Profile
+      </a>
+      <hr class="dropdown-divider">
+      <form action="{{ route('logout') }}" method="POST" class="m-0">
+        @csrf
+        <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2">
+          <i class="material-icons-outlined">power_settings_new</i> Logout
+        </button>
+      </form>
+    </div>
+  </li>
+@endauth
+
 
       </ul>
 
@@ -339,7 +365,7 @@
    <aside class="sidebar-wrapper" data-simplebar="true">
     <div class="sidebar-header">
       <div class="logo-icon">
-        <img src="{{ asset('assets/images/newLogohommie.png') }}" alt="Hommie Logo" width="100" class="logo-img me-2 mt-3">
+        <img src="{{ asset('assets/images/newLogohommie.png') }}" alt="Hommie Logo" width="100" class="logo-img me-2 mt-2">
       </div>
       <div class="logo-name flex-grow-1">
         <h5 class="mb-0" style="color:#289A84;"><span style="color:#152C5B;">Hom</span >mie</h5>
@@ -398,7 +424,7 @@
 
    <!--start footer-->
    <footer class="page-footer">
-    <p class="mb-0">Copyright © 2024. All right reserved.</p>
+    <p class="mb-0">Hommie © 2025. All right reserved.</p>
   </footer>
   <!--end footer-->
 

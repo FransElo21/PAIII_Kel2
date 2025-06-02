@@ -45,4 +45,11 @@ class User extends Authenticatable
     {
         return $this->belongsTo(UserRole::class, 'role_id', 'role_id');
     }
+
+    public function getInitialsAttribute(): string
+    {
+        $names = explode(' ', trim($this->name));
+        $ini = array_map(fn($n)=> strtoupper(substr($n,0,1)), $names);
+        return implode('', array_slice($ini, 0, 2));
+    }
 }

@@ -3,97 +3,130 @@
 @section('content')
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@php
+    // Ambil & hapus sekali flash message
+    $successMsg = session()->pull('success');
+    $errorMsg   = session()->pull('error');
+@endphp
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    @if(session('success'))
+    @if($successMsg)
         Swal.fire({
             icon: 'success',
             title: 'Berhasil!',
-            text: '{{ session('success') }}',
+            text: '{{ $successMsg }}',
             showConfirmButton: false,
             timer: 2000
         });
     @endif
 
-    @if(session('error'))
+    @if($errorMsg)
         Swal.fire({
             icon: 'error',
             title: 'Oops!',
-            text: '{{ session('error') }}',
+            text: '{{ $errorMsg }}',
             showConfirmButton: false,
             timer: 2500
         });
     @endif
 </script>
 
-
-<div class="row g-3">
+<div class="row g-3 align-items-center">
     <div class="col-auto">
-        <div class="position-relative">
-            <input class="form-control px-5 rounded-pill" type="search" placeholder="Search Property">
-            <span class="material-icons-outlined position-absolute ms-3 translate-middle-y start-0 top-50 fs-5">search</span>
-        </div>
+        {{-- Form Search --}}
+        <form method="GET" action="{{ url()->current() }}">
+            <div class="position-relative">
+                <input
+                    class="form-control px-5 rounded-pill"
+                    type="search"
+                    name="search"
+                    placeholder="Search Property"
+                    value="{{ request('search') }}"
+                >
+                <span class="material-icons-outlined position-absolute ms-3 translate-middle-y start-0 top-50 fs-5">
+                    search
+                </span>
+            </div>
+        </form>
     </div>
-    <div class="col-auto flex-grow-1 overflow-auto"></div>
+    <div class="col-auto flex-grow-1"></div>
     <div class="col-auto">
-        <div class="d-flex align-items-center gap-2 justify-content-lg-end">
-            <a href="{{ route('owner.add-property') }}" class="btn btn-primary px-4 rounded-pill">
-                <i class="bi bi-plus-lg me-2"></i> Add Property
-            </a>
-        </div>
+        <a href="{{ route('owner.add-property') }}" class="btn btn-primary px-4 rounded-pill">
+            <i class="bi bi-plus-lg me-2"></i> Add Property
+        </a>
     </div>
 </div>
 
-<div class="card mt-4">
-    <div class="card-body">
-        <div class="product-table">
-            <div class="table-responsive white-space-nowrap">
-                <table class="table align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th><input class="form-check-input" type="checkbox"></th>
-                            <th>No.</th>
-                            <th>Property Name</th>
-                            <th>Category</th>
-                            <th>Address</th>
-                            <th>Date</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($properties as $property)
-                        <tr>
-                            <td><input class="form-check-input" type="checkbox"></td>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $property->name }}</td>
-                            <td>{{ $property->property_type }}</td>
-                            <td>{{ $property->subdistrict }}</td>
-                            <td>{{ date('d M Y', strtotime($property->created_at)) }}</td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <!-- Tombol Edit (Menuju Halaman Edit) -->
-                                    <a href="{{ route('owner.edit-property', $property->id) }}" class="btn btn-warning btn-sm rounded-circle" title="Edit">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
+<div class="card mt-4 shadow-sm rounded-4">
+    <div class="card-body p-3">
+        <div class="table-responsive white-space-nowrap">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th><input class="form-check-input" type="checkbox"></th>
+                        <th>No.</th>
+                        <th>Property Name</th>
+                        <th>Category</th>
+                        <th>Address</th>
+                        <th>Date</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($properties as $idx => $property)
+                    <tr>
+                        <td><input class="form-check-input" type="checkbox"></td>
+                        <td>{{ $idx + 1 }}</td>
+                        <td>{{ $property->name }}</td>
+                        <td>{{ $property->property_type }}</td>
+                        <td>{{ $property->subdistrict }}</td>
+                        <td>{{ \Carbon\Carbon::parse($property->created_at)->format('d M Y') }}</td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-2">
+                                <a
+                                  href="{{ route('owner.edit-property', $property->id) }}"
+                                  class="btn btn-warning btn-sm rounded-circle"
+                                  title="Edit"
+                                >
+                                  <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <form
+                                  id="delete-form-{{ $property->id }}"
+                                  action="{{ route('owner.delete-property') }}"
+                                  method="POST" style="display:inline;"
+                                >
+                                    @csrf
+                                    <input type="hidden" name="property_id" value="{{ $property->id }}">
+                                    <button
+                                      type="button"
+                                      class="btn btn-danger btn-sm rounded-circle"
+                                      onclick="confirmDelete({{ $property->id }})"
+                                      title="Delete"
+                                    >
+                                      <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            No properties found.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
-                                    <!-- Tombol Delete -->
-                                    <form id="delete-form-{{ $property->id }}" action="{{ route('owner.delete-property') }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        <input type="hidden" name="property_id" value="{{ $property->id }}">
-                                        <button type="button" class="btn btn-danger btn-sm rounded-circle" onclick="confirmDelete({{ $property->id }})" title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form> 
-                                </div>                              
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            {{-- Pagination --}}
+            <div class="mt-3">
+            {{ $properties->links() }}
             </div>
         </div>
-        
-        <!-- Pagination (jika diperlukan) -->
+
+        {{-- Jika nanti pakai pagination manual, di sini --}}
     </div>
 </div>
 
@@ -119,13 +152,12 @@
         });
     }
 </script>
-    
+
 <style>
-    /* Tambahkan border-radius untuk tombol */
     .swal-confirm, .swal-cancel {
-        border-radius: 12px !important; /* Ubah sesuai selera */
+        border-radius: 12px !important;
         padding: 8px 16px;
     }
-</style>    
+</style>
 
 @endsection

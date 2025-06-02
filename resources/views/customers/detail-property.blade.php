@@ -36,26 +36,44 @@
         }
         
         .gallery-main {
-            height: 400px;
-            border-radius: 12px;
+            border-radius: 20px !important;
             overflow: hidden;
+            height: 390px;
+            min-height: 350px;
+            box-shadow: 0 6px 32px rgba(20,40,120,0.12);
         }
-        
+
         .gallery-thumb {
-            height: 180px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            border-radius: 16px !important;
+            overflow: hidden;
+            height: 190px;
+            object-fit: cover;
+            box-shadow: 0 3px 18px rgba(30,40,90,0.09);
+            transition: transform 0.25s cubic-bezier(.4,2,.7,1.2), box-shadow 0.2s;
         }
-        
+
         .gallery-thumb:hover {
-            transform: scale(1.03);
+            transform: scale(1.04) translateY(-4px);
+            box-shadow: 0 6px 22px rgba(30,40,90,0.16);
         }
-        
+
         .see-all-btn {
             position: absolute;
             bottom: 10px;
             right: 10px;
-            background: rgba(255,255,255,0.9) !important;
+            background: rgba(255,255,255,0.92);
+            color: #2E2E2E;
+            font-weight: 500;
+            border-radius: 24px !important;
+            padding: 6px 22px 6px 18px;
+            font-size: 1.05rem;
+            box-shadow: 0 1px 8px rgba(30,40,90,0.09);
+            transition: background 0.15s;
+        }
+
+        .see-all-btn:hover {
+            background: #eee;
+            color: var(--primary);
         }
         
         .facility-item {
@@ -121,11 +139,30 @@
             html {
                 scroll-behavior: smooth;
             }
+        .gallery-modal-thumb {
+            aspect-ratio: 4/3;
+            width: 100%;
+            height: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #f4f4f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gallery-modal-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 14px;
+        }
     </style>
     
-    <div class="container">
+<div class="container">
         <!-- Header Section -->    
-        <ol class="breadcrumb">
+        <ol class="breadcrumb pt-4">
           <li class="breadcrumb-item"><a href="{{ route('landingpage') }}">Beranda</a></li>
           <li class="breadcrumb-item"><a href="#">Property</a></li>
           <li class="breadcrumb-item active" aria-current="page">{{ $property->property_name }}</li>
@@ -137,24 +174,28 @@
                 $imagesCollection = collect($images);
                 $firstFiveImages = $imagesCollection->take(5);
             @endphp
-        
             <div class="row g-2 mb-4">
-                {{-- Gambar utama kiri --}}
+                {{-- Kolom utama (besar, kiri) --}}
                 <div class="col-md-6">
                     @if(isset($firstFiveImages[0]))
-                        <div class="rounded-4 overflow-hidden shadow-sm" style="height: 100%; min-height: 390px;">
-                            <img src="{{ asset('storage/' . $firstFiveImages[0]->images_path) }}" class="img-fluid w-100 h-100 object-fit-cover rounded-4" alt="Main Photo">
+                        <div class="gallery-main position-relative shadow-sm">
+                            <img src="{{ asset('storage/' . $firstFiveImages[0]->images_path) }}"
+                                class="img-fluid w-100 h-100 object-fit-cover"
+                                alt="Main Photo">
                         </div>
                     @endif
                 </div>
-        
-                {{-- Grid gambar kanan --}}
+                {{-- Kolom grid kecil (kanan, 2x2) --}}
                 <div class="col-md-6 d-grid gap-2" style="grid-template-columns: repeat(2, 1fr); display: grid;">
                     @foreach($firstFiveImages->slice(1)->values() as $index => $img)
-                        <div class="overflow-hidden rounded-4 shadow-sm position-relative" style="height: 190px;">
-                            <img src="{{ asset('storage/' . $img->images_path) }}" class="img-fluid w-100 h-100 object-fit-cover rounded-4" alt="Image {{ $index + 2 }}">
+                        <div class="gallery-thumb position-relative">
+                            <img src="{{ asset('storage/' . $img->images_path) }}"
+                                class="img-fluid w-100 h-100 object-fit-cover"
+                                alt="Image {{ $index + 2 }}">
                             @if($index === 3 && $imagesCollection->count() > 5)
-                                <button class="btn btn-light see-all-btn shadow-sm position-absolute bottom-0 end-0 m-2" data-bs-toggle="modal" data-bs-target="#photoModal" style="border-radius: 20px;">
+                                <button class="btn see-all-btn shadow"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#photoModal">
                                     <i class="bi bi-images me-1"></i> Lihat semua
                                 </button>
                             @endif
@@ -177,6 +218,7 @@
                         <span class="location-icon">
                             <i class="fas fa-map-marker-alt"></i>
                         </span>
+                        <span class="location-text">{{ $property->alamat_selengkapnya }}</span>
                         <span class="location-text">{{ $locationData->subdis_name }}, {{ $locationData->city_name }}</span>
                     </div>  
 
@@ -239,8 +281,10 @@
                     }
 
                     #sticky-date-picker.is-sticky {
-                        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-                        background: white !important;
+                        box-shadow: 0 8px 36px rgba(100,90,180,0.16) !important;
+                        background: #fff !important;
+                        animation: stickyFadeIn 0.45s;
+                        z-index: 100;
                     }
 
                     @media (max-width: 768px) {
@@ -249,70 +293,180 @@
                             top: auto;
                         }
                     }
+                                    /* Date Picker Card Modern */
+                #sticky-date-picker .card {
+                    border-radius: 22px !important;
+                    box-shadow: 0 8px 32px rgba(60, 80, 180, 0.10);
+                    border: none;
+                    background: rgba(255,255,255,0.96);
+                    transition: box-shadow 0.2s;
+                }
+                #sticky-date-picker .card:hover {
+                    box-shadow: 0 14px 48px rgba(70,100,200,0.13);
+                }
+
+                #sticky-date-picker .card-header {
+                    background: linear-gradient(87deg, #152C5B 0%, #289A84 100%);
+                    color: #fff !important;
+                    border-bottom: none;
+                    box-shadow: 0 2px 14px rgba(90,80,200,0.07);
+                }
+
+                #sticky-date-picker .form-label {
+                    color: #8a98b8 !important;
+                    font-weight: 500;
+                    letter-spacing: 0.2px;
+                }
+
+                #sticky-date-picker .form-control,
+                #sticky-date-picker .form-select {
+                    border-radius: 18px !important;
+                    background: #f7f8fa;
+                    border: 1px solid #e4e6ee;
+                    font-size: 1.04rem;
+                    padding-left: 42px;
+                    min-height: 44px;
+                    box-shadow: none;
+                    transition: border-color 0.18s;
+                }
+
+                #sticky-date-picker .form-control:focus,
+                #sticky-date-picker .form-select:focus {
+                    border-color: #289A84;
+                    background: #fff;
+                }
+
+                .sticky-date-icon {
+                    position: absolute;
+                    left: 18px; top: 50%;
+                    transform: translateY(-50%);
+                    color: #289A84;
+                    font-size: 1.2rem;
+                    opacity: 0.85;
+                    pointer-events: none;
+                }
+
+                /* Responsive: Card body padding */
+                @media (max-width: 768px) {
+                    #sticky-date-picker .card-body {
+                        padding: 1.4rem !important;
+                    }
+                }
+
+                /* Animasi smooth sticky */
+                #sticky-date-picker.is-sticky {
+                    box-shadow: 0 8px 36px rgba(100,90,180,0.16) !important;
+                    background: #fff !important;
+                    animation: stickyFadeIn 0.45s;
+                }
+                @keyframes stickyFadeIn {
+                    from { transform: translateY(-30px); opacity: 0.1;}
+                    to   { transform: translateY(0); opacity: 1;}
+                }
+
                 </style>
 
                 <!-- Check-in & Check-out -->
                 <div id="sticky-date-picker" class="mb-5 fade-in">
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-header bg-white py-3 px-4">
-            <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
-                <i class="bi bi-calendar-event me-2 text-success"></i> Pilih Tanggal Menginap
-            </h5>
-        </div>
-        <div class="card-body p-4">
-            <div class="row g-3">
-                @if($property->property_type_id == 1)
-                    <!-- Homestay -->
-                    <div class="col-md-6">
-                        <label for="checkInDate" class="form-label fw-medium text-muted">Check-in</label>
-                        <input type="text" id="checkInDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
+                    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                        <div class="card-header bg-white py-3 px-4">
+                            <h5 class="fw-bold mb-0 text-white d-flex align-items-center">
+                                <i class="bi bi-calendar-event me-2 text-white"></i> Pilih Tanggal Menginap
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                @if($property->property_type_id == 1)
+                                    <!-- Homestay -->
+                                    <div class="col-md-6">
+                                        <label for="checkInDate" class="form-label fw-medium text-muted">Check-in</label>
+                                        <input type="text" id="checkInDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="checkOutDate" class="form-label fw-medium text-muted">Check-out</label>
+                                        <input type="text" id="checkOutDate" class="form-control" placeholder="Pilih tanggal keluar" readonly>
+                                    </div>
+                                @else
+                                    <!-- Kost -->
+                                    <div class="col-md-6">
+                                        <label for="startDate" class="form-label fw-medium text-muted">Tanggal Masuk</label>
+                                        <input type="text" id="startDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="duration" class="form-label fw-medium text-muted">Durasi Sewa</label>
+                                        <select id="duration" class="form-select">
+                                            @for($i = 1; $i <= 12; $i++)
+                                                <option value="{{ $i }}">{{ $i }} Bulan</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <label for="checkOutDate" class="form-label fw-medium text-muted">Check-out</label>
-                        <input type="text" id="checkOutDate" class="form-control" placeholder="Pilih tanggal keluar" readonly>
-                    </div>
-                @else
-                    <!-- Kost -->
-                    <div class="col-md-6">
-                        <label for="startDate" class="form-label fw-medium text-muted">Tanggal Masuk</label>
-                        <input type="text" id="startDate" class="form-control" placeholder="Pilih tanggal masuk" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="duration" class="form-label fw-medium text-muted">Durasi Sewa</label>
-                        <select id="duration" class="form-select">
-                            @for($i = 1; $i <= 12; $i++)
-                                <option value="{{ $i }}">{{ $i }} Bulan</option>
-                            @endfor
-                        </select>
-                    </div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-
+                </div>
 
                 <script>
-                    const stickyCard = document.getElementById('sticky-date-picker');
+    document.addEventListener('DOMContentLoaded', function() {
+        const stickyCard = document.getElementById('sticky-date-picker');
+        const stopMarker = document.getElementById('stop-sticky-marker');
 
-                    if (stickyCard) {
-                        const observer = new IntersectionObserver((entries) => {
-                            entries.forEach(entry => {
-                                if (!entry.isIntersecting) {
-                                    stickyCard.classList.add('is-sticky');
-                                } else {
-                                    stickyCard.classList.remove('is-sticky');
-                                }
-                            });
-                        }, {
-                            threshold: 0.1,
-                            rootMargin: "-80px 0px 0px 0px" // Sesuaikan dengan tinggi header
-                        });
+        if (stickyCard && stopMarker) {
+            let isStuck = false;
 
-                        observer.observe(stickyCard);
+            // Observer untuk sticky mulai/lepas
+            const observer = new IntersectionObserver(entries => {
+                entries.forEach(entry => {
+                    // Jika marker sudah kelihatan (sudah scroll ke bawah kamar), lepas sticky
+                    if (entry.isIntersecting) {
+                        stickyCard.classList.remove('is-sticky');
+                        stickyCard.style.position = 'relative';
+                        stickyCard.style.top = 'auto';
+                        isStuck = false;
+                    } else {
+                        // Kalau belum ketemu marker, tetap sticky
+                        stickyCard.classList.add('is-sticky');
+                        stickyCard.style.position = 'sticky';
+                        stickyCard.style.top = '70px'; // atau sesuai header
+                        isStuck = true;
                     }
-                </script>
+                });
+            }, {
+                root: null, // viewport
+                threshold: 0, // begitu marker kelihatan dikit aja
+            });
 
+            observer.observe(stopMarker);
+        }
+    });
+</script>
+
+    <style>
+        .room-image-fixed {
+            width: 100% !important;
+            height: 180px !important; /* Sesuaikan tinggi sesuai kebutuhan */
+            object-fit: cover !important;
+            border-radius: 10px;
+            background: #f7f7f7;
+        }
+        @media (max-width: 576px) {
+            .room-image-fixed {
+                height: 120px !important;
+            }
+        }
+        .card.room-shadow {
+    box-shadow: 0 6px 32px rgba(80, 100, 180, 0.12);
+    border-radius: 20px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    border: none;
+    background: #fff;
+}
+.card.room-shadow:hover {
+    box-shadow: 0 12px 40px rgba(60, 80, 150, 0.18);
+    transform: translateY(-4px) scale(1.012);
+    z-index: 1;
+}
+    </style>
                 <!-- Available Rooms -->
                 <div id="available-rooms" class="mb-5 fade-in">
                     <h4 class="fw-bold mb-3">Tipe Kamar Tersedia</h4>
@@ -321,31 +475,20 @@
                             <p class="text-muted">Tidak ada kamar yang tersedia.</p>
                         @else
                         @foreach($rooms as $room)
-                            <div class="card mb-4 shadow-sm border-0 rounded overflow-hidden">
+                            <div class="card mb-4 room-shadow">
                                 <div class="row g-0 h-100">
 
                                     <!-- Kolom Gambar -->
-                                    <div class="col-md-4 position-relative">
+                                    <div class="col-md-4 position-relative d-flex align-items-center" style="min-height:180px; max-height:180px;">
                                         @if($room->image_path)
                                             <img src="{{ asset('storage/' . $room->image_path) }}" 
-                                                class="img-fluid h-100 w-100" 
-                                                style="object-fit: cover;" 
+                                                class="img-fluid w-100 h-100 object-fit-cover room-image-fixed"
                                                 alt="{{ $room->room_type }}">
                                         @else
-                                            <div class="bg-light d-flex align-items-center justify-content-center h-100">
+                                            <div class="bg-light d-flex align-items-center justify-content-center w-100 h-100" style="min-height:180px;">
                                                 <i class="bi bi-image text-secondary" style="font-size: 3rem;"></i>
                                             </div>
                                         @endif
-
-                                        <!-- Overlay Info -->
-                                        <div class="position-absolute bottom-0 start-0 w-100 p-2 bg-light bg-opacity-90">
-                                            <div class="d-flex align-items-center gap-2 small text-muted">
-                                                <i class="bi bi-door-open-fill text-primary"></i>
-                                                <span>{{ $room->luas ?? '18m²' }}</span>
-                                                <i class="bi bi-person-fill ms-2 text-primary"></i>
-                                                <span>{{ $room->kapasitas ?? '2 Guests' }}</span>
-                                            </div>
-                                        </div>
                                     </div>
 
                                     <!-- Kolom Informasi -->
@@ -376,7 +519,7 @@
 
                                             <!-- Harga -->
                                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                                <span class="badge bg-danger bg-opacity-10 text-danger fs-6">Sisa {{ $room->stok }} kamar lagi!</span>
+                                                <span class="badge bg-danger bg-opacity-10 text-danger fs-6">Sisa {{ $room->available_room }} kamar lagi!</span>
                                                 <div class="text-end">
                                                     <div class="fs-5 text-danger fw-bold">Rp{{ number_format($room->latest_price, 0, ',', '.') }}</div>
                                                     <small class="text-muted">/kamar/malam</small>
@@ -400,7 +543,7 @@
                                                                 class="quantity-input form-control form-control-sm text-center"
                                                                 value="0"
                                                                 min="0"
-                                                                max="{{ $room->stok }}"
+                                                                max="{{ $room->available_room }}"
                                                                 id="quantity-input-{{ $room->room_id }}"
                                                                 data-room-id="{{ $room->room_id }}"
                                                                 data-price="{{ $room->latest_price }}"
@@ -423,7 +566,6 @@
                     <div class="container">
                         <!-- Ringkasan Kamar -->
                         <div id="selected-rooms-summary" class="mb-2"></div>
-
                         <!-- Total Harga -->
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -436,6 +578,15 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Hidden Booking Form -->
+                <form id="bookingForm" action="{{ route('pemesanan.index') }}" method="POST" style="display:none;">
+                    @csrf
+                    <input type="hidden" name="property_id" value="{{ $property->property_id }}">
+                    <input type="hidden" name="type_id" value="{{ $property->property_type_id }}">
+                    <input type="hidden" name="booking_data" id="bookingData">
+                    <input type="hidden" name="user_id" value="{{ $userId }}">
+                </form>
 
                 <style>
                     .custom-swal-popup {
@@ -536,6 +687,8 @@
                         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                     }
                 </style>
+
+                <div id="stop-sticky-marker"></div>
                 
                 <!-- Reviews -->
                 <div class="mb-5 fade-in">
@@ -634,8 +787,12 @@
                     <div class="row">
                         @foreach($images as $img)
                             @if(isset($img->images_path))
-                                <div class="col-md-4 mb-3">
-                                    <img src="{{ asset('storage/' . $img->images_path) }}" class="img-fluid rounded" alt="Foto Properti">
+                                <div class="col-md-4 mb-3 d-flex align-items-stretch">
+                                    <div class="gallery-modal-thumb w-100">
+                                        <img src="{{ asset('storage/' . $img->images_path) }}"
+                                            class="img-fluid object-fit-cover w-100 h-100"
+                                            alt="Foto Properti">
+                                    </div>
                                 </div>
                             @endif
                         @endforeach
@@ -680,7 +837,7 @@
             const totalText = document.getElementById('totalHarga');
     
             if (start && end && end > start) {
-                const diffDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+                const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
                 const total = diffDays * price;
                 totalText.textContent = `Total untuk ${diffDays} malam: Rp ${total.toLocaleString('id-ID')}`;
             } else {
@@ -721,27 +878,24 @@
     </script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const latitude = {{ $property->latitude ?? 0 }};
-            const longitude = {{ $property->longitude ?? 0 }};
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cek jika property punya koordinat
+            @if($property->latitude && $property->longitude)
+                var lat = {{ $property->latitude }};
+                var lng = {{ $property->longitude }};
+                var map = L.map('map').setView([lat, lng], 16);
 
-            if (latitude && longitude) {
-                const map = L.map('map').setView([latitude, longitude], 15);
-
-                // Tambahkan layer peta dari OpenStreetMap
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                    attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
 
-                // Tambahkan marker di posisi properti
-                L.marker([latitude, longitude])
-                    .addTo(map)
-                    .bindPopup("{{ $property->property_name }}")
-                    .openPopup();
-            }
+                var marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup('<b>{{ addslashes($property->property_name) }}</b>').openPopup();
+            @endif
         });
     </script>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -843,83 +997,95 @@
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(angka);
     }
 
-    function updateTotalPrice() {
-        const typeId = {{ $property->property_type_id }};
-        let totalPrice = 0;
-        const summaryContainer = document.getElementById("selected-rooms-summary");
-        summaryContainer.innerHTML = "";
-        const fragment = document.createDocumentFragment();
+function updateTotalPrice() {
+    const typeId = {{ $property->property_type_id }};
+    let totalPrice = 0;
+    const summaryContainer = document.getElementById("selected-rooms-summary");
+    summaryContainer.innerHTML = "";
+    const fragment = document.createDocumentFragment();
 
-        const inputs = document.querySelectorAll(".quantity-input");
+    const inputs = document.querySelectorAll(".quantity-input");
 
-        if (typeId === 1) {
-            const checkIn = document.getElementById("checkInDate").value;
-            const checkOut = document.getElementById("checkOutDate").value;
-            if (!checkIn || !checkOut || checkOut <= checkIn) return;
-            const start = new Date(checkIn);
-            const end = new Date(checkOut);
-            diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    if (typeId === 1) {
+        // Homestay
+        const checkIn = document.getElementById("checkInDate").value;
+        const checkOut = document.getElementById("checkOutDate").value;
+        if (!checkIn || !checkOut) return;
 
-            inputs.forEach(input => {
-                const qty = parseInt(input.value);
-                const price = parseFloat(input.dataset.price);
-                const roomName = input.closest('.card')?.querySelector('.card-title')?.innerText || "Kamar";
-                if (qty > 0) {
-                    const subtotal = qty * price * diffDays;
-                    totalPrice += subtotal;
-                    const div = document.createElement("div");
-                    div.className = "d-flex justify-content-between";
-                    div.innerHTML = `<small>${roomName} x ${qty}</small><small>Rp${subtotal.toLocaleString('id-ID')}</small>`;
-                    fragment.appendChild(div);
-                }
-            });
+        const start = new Date(checkIn);
+        const end = new Date(checkOut);
+        const timeDiff = end - start;
+        // Validasi: check-out harus setelah check-in
+        if (isNaN(start) || isNaN(end) || timeDiff <= 0) {
+            // Tampilkan error jika user nakal
+            const totalDisplay = document.getElementById("total-harga-footer");
+            totalDisplay.textContent = 'Tanggal tidak valid';
+            document.getElementById("total-footer").style.display = "block";
+            return;
+        }
+        diffDays = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
-            if (diffDays > 0) {
-                fragment.appendChild(document.createElement("hr"));
-                const durasi = document.createElement("div");
-                durasi.className = "d-flex justify-content-between text-muted";
-                durasi.innerHTML = `<small>Durasi</small><small>${diffDays} malam</small>`;
-                fragment.appendChild(durasi);
+        inputs.forEach(input => {
+            const qty = parseInt(input.value);
+            const price = parseFloat(input.dataset.price);
+            const roomName = input.closest('.card')?.querySelector('.card-title')?.innerText || "Kamar";
+            if (qty > 0) {
+                const subtotal = qty * price * diffDays;
+                totalPrice += subtotal;
+                const div = document.createElement("div");
+                div.className = "d-flex justify-content-between";
+                div.innerHTML = `<small>${roomName} x ${qty}</small><small>Rp${subtotal.toLocaleString('id-ID')}</small>`;
+                fragment.appendChild(div);
             }
+        });
 
-        } else {
-            const startDate = document.getElementById("startDate").value;
-            const duration = parseInt(document.getElementById("duration").value);
-            if (!startDate || !duration) return;
-
-            inputs.forEach(input => {
-                const qty = parseInt(input.value);
-                const price = parseFloat(input.dataset.price);
-                const roomName = input.closest('.card')?.querySelector('.card-title')?.innerText || "Kamar";
-                if (qty > 0) {
-                    const subtotal = qty * price * duration;
-                    totalPrice += subtotal;
-                    const div = document.createElement("div");
-                    div.className = "d-flex justify-content-between";
-                    div.innerHTML = `<small>${roomName} x ${qty}</small><small>Rp${subtotal.toLocaleString('id-ID')}</small>`;
-                    fragment.appendChild(div);
-                }
-            });
-
+        if (diffDays > 0) {
             fragment.appendChild(document.createElement("hr"));
             const durasi = document.createElement("div");
             durasi.className = "d-flex justify-content-between text-muted";
-            durasi.innerHTML = `<small>Durasi</small><small>${duration} bulan</small>`;
+            durasi.innerHTML = `<small>Durasi</small><small>${diffDays} malam</small>`;
             fragment.appendChild(durasi);
         }
 
-        summaryContainer.appendChild(fragment);
+    } else {
+        // Kost
+        const startDate = document.getElementById("startDate").value;
+        const duration = parseInt(document.getElementById("duration").value);
+        if (!startDate || !duration || duration <= 0) return;
 
-        const totalDisplay = document.getElementById("total-harga-footer");
-        const totalFooter = document.getElementById("total-footer");
+        inputs.forEach(input => {
+            const qty = parseInt(input.value);
+            const price = parseFloat(input.dataset.price);
+            const roomName = input.closest('.card')?.querySelector('.card-title')?.innerText || "Kamar";
+            if (qty > 0) {
+                const subtotal = qty * price * duration;
+                totalPrice += subtotal;
+                const div = document.createElement("div");
+                div.className = "d-flex justify-content-between";
+                div.innerHTML = `<small>${roomName} x ${qty}</small><small>Rp${subtotal.toLocaleString('id-ID')}</small>`;
+                fragment.appendChild(div);
+            }
+        });
 
-        if (totalPrice > 0) {
-            totalDisplay.textContent = formatRupiah(totalPrice);
-            totalFooter.style.display = "block";
-        } else {
-            totalFooter.style.display = "none";
-        }
+        fragment.appendChild(document.createElement("hr"));
+        const durasi = document.createElement("div");
+        durasi.className = "d-flex justify-content-between text-muted";
+        durasi.innerHTML = `<small>Durasi</small><small>${duration} bulan</small>`;
+        fragment.appendChild(durasi);
     }
+
+    summaryContainer.appendChild(fragment);
+
+    const totalDisplay = document.getElementById("total-harga-footer");
+    const totalFooter = document.getElementById("total-footer");
+
+    if (totalPrice > 0) {
+        totalDisplay.textContent = formatRupiah(totalPrice);
+        totalFooter.style.display = "block";
+    } else {
+        totalFooter.style.display = "none";
+    }
+}
 
     function prosesPemesanan() {
         const typeId = {{ $property->property_type_id }};
@@ -932,39 +1098,48 @@
             // Homestay
             const checkIn = document.getElementById("checkInDate").value;
             const checkOut = document.getElementById("checkOutDate").value;
-            if (!checkIn || !checkOut || checkOut <= checkIn) {
+
+            if (!checkIn || !checkOut) {
                 alert("Isi tanggal check-in dan check-out");
                 return;
             }
-
+            const start = new Date(checkIn);
+            const end = new Date(checkOut);
+            const timeDiff = end - start;
+            if (isNaN(start) || isNaN(end) || timeDiff <= 0) {
+                alert("Tanggal check-out harus setelah check-in.");
+                return;
+            }
+            const diffDaysLocal = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
             document.querySelectorAll(".quantity-input").forEach(input => {
                 const qty = parseInt(input.value);
                 const price = parseFloat(input.dataset.price);
                 const roomId = input.dataset.roomId;
                 if (qty > 0) {
-                    const subtotal = qty * price * diffDays;
+                    const subtotal = qty * price * diffDaysLocal;
                     totalPrice += subtotal;
-                    selectedRooms.push({ room_id: roomId, quantity: qty, price_per_room: price, subtotal });
+                    selectedRooms.push({
+                        room_id: roomId,
+                        quantity: qty,
+                        price_per_room: price,
+                        subtotal: subtotal,
+                        check_in: checkIn,
+                        check_out: checkOut
+                    });
                 }
             });
-
             if (selectedRooms.length === 0) {
                 alert("Pilih kamar terlebih dahulu.");
                 return;
             }
-
-            window.location.href = `/pemesanan?rooms=${encodeURIComponent(JSON.stringify(selectedRooms))}&total_price=${totalPrice}&property_id=${propertyId}&user_id=${userId}&check_in=${checkIn}&check_out=${checkOut}`;
-        
         } else {
             // Kost
             const startDate = document.getElementById("startDate").value;
             const duration = parseInt(document.getElementById("duration").value);
-
             if (!startDate || !duration || duration <= 0) {
                 alert("Isi tanggal dan durasi kost.");
                 return;
             }
-
             document.querySelectorAll(".quantity-input").forEach(input => {
                 const qty = parseInt(input.value);
                 const price = parseFloat(input.dataset.price);
@@ -972,18 +1147,101 @@
                 if (qty > 0 && roomId) {
                     const subtotal = qty * price * duration;
                     totalPrice += subtotal;
-                    selectedRooms.push({ room_id: roomId, quantity: qty, price_per_room: price, subtotal });
+                    selectedRooms.push({
+                        room_id: roomId,
+                        quantity: qty,
+                        price_per_room: price,
+                        subtotal: subtotal,
+                        start_date: startDate,
+                        duration: duration
+                    });
                 }
             });
-
             if (selectedRooms.length === 0) {
                 alert("Pilih kamar terlebih dahulu.");
                 return;
             }
+        }
 
-            window.location.href = `/pemesanan-kost?rooms=${encodeURIComponent(JSON.stringify(selectedRooms))}&total_price=${totalPrice}&property_id=${propertyId}&user_id=${userId}&start_date=${startDate}&duration=${duration}`;
+        // Submit ke form hidden POST (bookingForm)
+        const bookingData = document.getElementById('bookingData');
+        bookingData.value = JSON.stringify(selectedRooms);
+        document.getElementById('bookingForm').submit();
+    }
+
+    function prosesPemesanan() {
+    const typeId = {{ $property->property_type_id }};
+    const propertyId = "{{ $propertyId }}";
+    const userId = "{{ $userId }}";
+    let selectedRooms = [];
+    let totalPrice = 0;
+
+    if (typeId === 1) {
+        // Homestay
+        const checkIn = document.getElementById("checkInDate").value;
+        const checkOut = document.getElementById("checkOutDate").value;
+        if (!checkIn || !checkOut || checkOut <= checkIn) {
+            alert("Isi tanggal check-in dan check-out");
+            return;
+        }
+        document.querySelectorAll(".quantity-input").forEach(input => {
+            const qty = parseInt(input.value);
+            const price = parseFloat(input.dataset.price);
+            const roomId = input.dataset.roomId;
+            if (qty > 0) {
+                const subtotal = qty * price * diffDays;
+                totalPrice += subtotal;
+                selectedRooms.push({
+                    room_id: roomId,
+                    quantity: qty,
+                    price_per_room: price,
+                    subtotal: subtotal,
+                    check_in: checkIn,
+                    check_out: checkOut
+                });
+            }
+        });
+        if (selectedRooms.length === 0) {
+            alert("Pilih kamar terlebih dahulu.");
+            return;
+        }
+    } else {
+        // Kost
+        const startDate = document.getElementById("startDate").value;
+        const duration = parseInt(document.getElementById("duration").value);
+        if (!startDate || !duration || duration <= 0) {
+            alert("Isi tanggal dan durasi kost.");
+            return;
+        }
+        document.querySelectorAll(".quantity-input").forEach(input => {
+            const qty = parseInt(input.value);
+            const price = parseFloat(input.dataset.price);
+            const roomId = input.dataset.roomId;
+            if (qty > 0 && roomId) {
+                const subtotal = qty * price * duration;
+                totalPrice += subtotal;
+                selectedRooms.push({
+                    room_id: roomId,
+                    quantity: qty,
+                    price_per_room: price,
+                    subtotal: subtotal,
+                    start_date: startDate,
+                    duration: duration
+                });
+            }
+        });
+        if (selectedRooms.length === 0) {
+            alert("Pilih kamar terlebih dahulu.");
+            return;
         }
     }
+
+    // Submit ke form hidden POST (bookingForm)
+    const bookingData = document.getElementById('bookingData');
+    bookingData.value = JSON.stringify(selectedRooms);
+    document.getElementById('bookingForm').submit();
+}
+
 
 
     function validateStock() {
@@ -1029,12 +1287,12 @@
         altFormat: "d F Y",
         dateFormat: "Y-m-d",
         minDate: "today",
-        onChange: function(selectedDates, dateStr, instance) {
+        onChange: function(selectedDates, dateStr) {
             flatpickr("#checkOutDate", {
                 altInput: true,
                 altFormat: "d F Y",
                 dateFormat: "Y-m-d",
-                minDate: dateStr,
+                minDate: dateStr,  // Check-out tidak bisa lebih awal dari check-in
                 onChange: updateTotalPrice
             });
             updateTotalPrice();

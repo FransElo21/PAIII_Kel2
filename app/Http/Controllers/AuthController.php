@@ -14,24 +14,38 @@ use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
 {
-    public function landingpage() {
-        // Ambil semua properti tanpa harga kamar
+    public function landingPage()
+    {
+        // Ambil semua properti
         $properties = DB::select("CALL viewAll_Properties()");
-        
-        // Loop untuk menambahkan harga kamar termurah dan rating ke setiap properti
+
         foreach ($properties as $property) {
             // Harga kamar termurah
-            $priceResult = DB::select("CALL get_MinRoomPriceByProperty(?)", [$property->property_id]);
+            $priceResult = DB::select("CALL get_MinRoomPriceByProperty(?)", [
+                $property->property_id
+            ]);
             $property->min_price = $priceResult[0]->min_price ?? 0;
-    
-            // Rating rata-rata
-            $ratingResult = DB::select("CALL get_AverageRating(?)", [$property->property_id]);
-            $property->avg_rating = $ratingResult[0]->avg_rating ?? 0;
+
+            // Rating rata-rata dan total review
+            $ratingResult = DB::select("CALL get_AverageRating(?)", [
+                $property->property_id
+            ]);
+            $property->avg_rating    = $ratingResult[0]->avg_rating    ?? 0;
             $property->total_reviews = $ratingResult[0]->total_reviews ?? 0;
+
+            // Ambil city & district saja
+            $loc = DB::select("CALL get_fullLocation1(?)", [
+                $property->subdis_id
+            ])[0] ?? null;
+
+            $property->city     = $loc->city     ?? '';
+            $property->district = $loc->district ?? '';
         }
-        
-        return view('customers/welcome', compact('properties'));
+
+        // Kirim ke view
+        return view('customers.welcome', compact('properties'));
     }
+
 
     public function test() {
         return view('customers.test');
@@ -296,7 +310,7 @@ class AuthController extends Controller
                 return redirect()->route('owner.dashboard')->with('success', 'Login sebagai Owner!');
             }
 
-            return redirect()->route('dashboard')->with('success', 'Login berhasil!');
+            return redirect()->route('showAdminpage')->with('success', 'Login Sebagai Super Admin!');
         } catch (\Exception $e) {
             return back()
                 ->withErrors(['login' => 'Terjadi kesalahan: ' . $e->getMessage()])

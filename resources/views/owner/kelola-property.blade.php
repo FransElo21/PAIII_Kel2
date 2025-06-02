@@ -1,5 +1,28 @@
 @extends('layouts.owner.index-owner')
 @section('content')
+
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
+{{-- notifikasi sukses --}}
+@if(session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            showToast("{{ session('success') }}", 'success');
+        });
+    </script>
+@endif
+
+{{-- notifikasi error --}}
+@if(session('error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            showToast("{{ session('error') }}", 'danger');
+        });
+    </script>
+@endif
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
     <style>
         body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
         .card { border-radius: 15px; box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1); padding: 25px; transition: transform 0.3s ease; }
@@ -33,6 +56,32 @@
         .toast-body {
             padding: 0.75rem 1rem;
         }
+        /* Breadcrumb */
+        .breadcrumb {
+            /* padding: 0.75rem 1.25rem; */
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); */
+        }
+
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            color: #94a3b8;
+        }
+
+        .breadcrumb-item a {
+            color: #64748b;
+            transition: color 0.3s ease;
+        }
+
+        .breadcrumb-item a:hover {
+            color: #289A84;
+        }
+
+        .breadcrumb-item.active {
+            color: #289A84;
+            font-weight: 600;
+        }
     </style>
 
     <nav aria-label="breadcrumb">
@@ -48,8 +97,8 @@
             @csrf @method('PUT')
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="name" class="form-label">Nama Properti</label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ $property->property_name }}" required>
+                    <label for="property_name" class="form-label">Nama Properti</label>
+                    <input type="text" class="form-control" id="property_name" name="property_name" value="{{ $property->property_name }}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="property_type" class="form-label">Kategori</label>
@@ -59,30 +108,145 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label for="subdistrict" class="form-label">Alamat</label>
-                    <select class="form-control" id="subdistrict" name="subdis_id" required>
-                        @foreach($subdistricts as $sub)
-                            <option value="{{ $sub->id }}" {{ $sub->id == $property->subdis_id ? 'selected' : '' }}>{{ $sub->subdis_name }}</option>
-                        @endforeach
+                <div class="row mb-3">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Provinsi</label>
+                    <select id="provinceSelect" name="province_id" class="form-control">
+                    <option value="">Pilih Provinsi</option>
+                    @foreach($provinces as $p)
+                        <option value="{{ $p->id }}"
+                        {{ $p->id == $loc->province_id ? 'selected':'' }}>
+                        {{ $p->prov_name }}
+                        </option>
+                    @endforeach
                     </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Kota/Kabupaten</label>
+                    <select id="regencySelect" name="regency_id" class="form-control">
+                    <option value="">Pilih Kota/Kab</option>
+                    @foreach($cities as $r)
+                        <option value="{{ $r->city_id }}"
+                        {{ $r->city_id == $loc->city_id ? 'selected':'' }}>
+                        {{ $r->city_name }}
+                        </option>
+                    @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Kecamatan</label>
+                    <select id="districtSelect" name="district_id" class="form-control">
+                    <option value="">Pilih Kecamatan</option>
+                    @foreach($districts as $d)
+                        <option value="{{ $d->district_id }}"
+                        {{ $d->district_id == $loc->dist_id ? 'selected':'' }}>
+                        {{ $d->dis_name }}
+                        </option>
+                    @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Kelurahan</label>
+                    <select id="subdistrictSelect" name="subdis_id" class="form-control" required>
+                    <option value="">Pilih Kelurahan</option>
+                    @foreach($subdistricts as $sd)
+                        <option value="{{ $sd->subdis_id }}"
+                        {{ $sd->subdis_id == $property->subdis_id ? 'selected':'' }}>
+                        {{ $sd->subdis_name }}
+                        </option>
+                    @endforeach
+                    </select>
+                </div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label for="full_address" class="form-label">Alamat Selengkapnya</label>
+                    <input type="text" class="form-control" id="full_address" name="alamat_selengkapnya" value="{{ $property->alamat_selengkapnya }}" required>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="description" class="form-label">Deskripsi</label>
                     <textarea class="form-control" id="description" name="description" rows="3" required>{{ $property->description }}</textarea>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label fw-medium">Fasilitas</label>
-                    <div class="card shadow-sm border-0 rounded-4">
-                        <div class="card-body p-3">
-                            <h6 class="mb-3 text-secondary">Fasilitas Terpilih</h6>
-                            <div class="selected-facilities d-flex flex-wrap gap-2" id="selectedFacilities">
-                                <!-- Fasilitas akan ditambahkan secara dinamis -->
-                            </div>
+
+                <!-- Fasilitas -->
+                <div class="col-12">
+                <label class="form-label fw-semibold">Fasilitas</label>
+                <div class="facilities-container position-relative mb-3">
+                    <input
+                    type="text"
+                    class="form-control mb-2"
+                    id="facilityInput"
+                    placeholder="Cari fasilitas..."
+                    autocomplete="off"
+                    >
+                    <div
+                    id="facilityDropdown"
+                    class="list-group autocomplete-dropdown"
+                    style="position: absolute; width: 100%; z-index: 1000; display: none;"
+                    ></div>
+
+                    {{-- badge fasilitas terpilih --}}
+                    <div id="selectedFacilities" class="d-flex flex-wrap gap-2 mb-2">
+                    @foreach($facilities  as $pf)
+                        <div
+                        class="badge bg-primary d-flex align-items-center gap-1 px-2 py-1"
+                        data-id="{{ $pf->facility_id }}"
+                        >
+                        {{ $pf->facility_name }}
+                        <button
+                            type="button"
+                            class="btn-close btn-close-white btn-sm remove-facility ms-1"
+                        ></button>
                         </div>
+                    @endforeach
                     </div>
+
+                    {{-- hidden inputs untuk form --}}
+                    {{-- <div id="hiddenFacilitiesContainer">
+                    @foreach($facilities as $pf)
+                        <input
+                        type="hidden"
+                        name="facilities[]"
+                        value="{{ $pf->facility_id }}"
+                        >
+                    @endforeach
+                    </div> --}}
+                </div>
                 </div>
             </div>
+
+            <hr>
+
+            <div class="row mb-3">
+                <div class="col-12">
+                <label class="form-label">Pilih Lokasi Properti</label>
+                <div id="map" style="width:100%;height:300px;border:1px solid #ddd;"></div>
+                </div>
+
+                {{-- Hidden inputs --}}
+                <input 
+                type="hidden" 
+                id="latitude" 
+                name="latitude" 
+                value="{{ $property->latitude }}" 
+                >
+                <input 
+                type="hidden" 
+                id="longitude" 
+                name="longitude" 
+                value="{{ $property->longitude }}" 
+                >
+            </div>
+
+                        <div class="mt-4 d-flex justify-content-end gap-3">
+                <a href="{{ route('owner.property') }}" class="btn btn-secondary" style="border-radius: 20px;">Kembali</a>
+                <button type="submit" style="border-radius: 20px;" class="btn btn-success">Simpan Perubahan</button>
+            </div>
+        </form>
+
             <hr>
 
             <style>
@@ -271,52 +435,66 @@
                     </button>
                 </div>
             
-                <div id="room-list" class="row g-3">
-                    @forelse($rooms as $room)
-                        <div class="col-md-6">
-                            <div class="card border-0 shadow-sm rounded-4 h-100">
-                                <div class="card-body d-flex">
-                                    <img src="{{ asset('storage/' . $room->image_path) }}"
-                                         alt="Room Image"
-                                         class="rounded-3 me-3"
-                                         style="width: 100px; height: 80px; object-fit: cover;">
-            
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1 fw-semibold">{{ $room->room_type }}</h6>
-                                        <small class="text-muted d-block mb-1">Rp {{ number_format($room->latest_price, 0, ',', '.') }} / malam</small>
-                                        <small class="text-secondary">Jumlah: {{ $room->stok }} kamar</small>
+                <!-- Daftar Kamar dalam Bentuk Tabel -->
+                <div class="col-md-12 mb-4">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Tipe Kamar</th>
+                                <th scope="col">Harga / Malam</th>
+                                <th scope="col">Total Room</th>
+                                <th scope="col">Available Room</th>
+                                <th scope="col" class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($rooms as $index => $room)
+                            <tr>
+                                <th scope="row">{{ $index + 1 }}</th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img 
+                                            src="{{ asset('storage/' . $room->image_path) }}"
+                                            alt="Foto {{ $room->room_type }}"
+                                            class="rounded"
+                                            style="width:80px; height:60px; object-fit:cover;"
+                                        >
+                                        <span class="ms-2">{{ $room->room_type }}</span>
                                     </div>
-            
-                                    <div class="d-flex align-items-center ms-2 gap-2">
-                                        <a href="" class="btn btn-warning btn-sm rounded-circle" title="Edit">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        <form action="{{ route('property.room.delete', $room->room_id) }}" method="POST" class="delete-room-form d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" class="btn btn-danger btn-sm rounded-circle confirm-delete" title="Delete">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>                                    
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="col-12">
-                            <div class="alert alert-light border text-center" role="alert">
-                                Belum ada kamar ditambahkan.
-                            </div>
-                        </div>
-                    @endforelse
+                                </td>
+                                <td>Rp {{ number_format($room->latest_price, 0, ',', '.') }}</td>
+                                <td>{{ $room->total_room ?? $room->stok }}</td>
+                                <td>{{ $room->available_room }}</td>
+                                <td class="text-center">
+                                    <a href="{{ route('property.room.edit', $room->room_id) }}"
+                                    class="btn btn-warning btn-sm rounded-circle me-1" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <form action="{{ route('property.room.delete', $room->room_id) }}"
+                                        method="POST"
+                                        class="d-inline delete-room-form">
+                                        @csrf @method('DELETE')
+                                        <button type="button"
+                                                class="btn btn-danger btn-sm confirm-delete rounded-circle"
+                                                title="Hapus">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    Belum ada kamar ditambahkan.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            </div>            
 
-            <div class="mt-4 d-flex justify-content-end gap-3">
-                <a href="{{ route('owner.property') }}" class="btn btn-secondary" style="border-radius: 20px;">Kembali</a>
-                <button type="submit" style="border-radius: 20px;" class="btn btn-success">Simpan Perubahan</button>
-            </div>
-        </form>
+            </div>            
     </div>
 
     <!-- Modal Tambah Kamar -->
@@ -340,6 +518,7 @@
                             <div class="col-md-6">
                                 <label for="price" class="form-label fw-medium">Harga per Malam</label>
                                 <input type="text" class="form-control" id="price" name="price" required placeholder="Rp 500.000">
+
                             </div>
                             <div class="col-md-6">
                                 <label for="stok" class="form-label fw-medium">Kuantitas</label>
@@ -357,31 +536,6 @@
                             </button>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal Tambah Fasilitas -->
-    <div class="modal fade" id="addFacilityModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Tambah Fasilitas</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="facility-container">
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control facility-input" placeholder="Masukkan fasilitas baru">
-                            <button class="btn btn-danger remove-facility" type="button">❌</button>
-                        </div>
-                    </div>
-                    <button type="button" style="border-radius: 20px;" class="btn btn-success w-100" id="addMoreFacility">+ Tambah Fasilitas</button>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" style="border-radius: 20px;" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="button" style="border-radius: 20px;" class="btn btn-primary" id="saveFacilities">Simpan</button>
                 </div>
             </div>
         </div>
@@ -685,55 +839,31 @@
                 button.disabled = false;
                 button.innerHTML = "Unggah";
             }
+    });
+</script>
 
-            // Hapus kamar
-            document.addEventListener('click', function (e) {
-            document.addEventListener('click', function (e) {
-            if (e.target.closest('.confirm-delete')) {
-                const button = e.target.closest('.confirm-delete');
-                const form = button.closest('form');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const priceInput = document.getElementById('price');
+  const addRoomForm = document.getElementById('addRoomForm');
 
-                Swal.fire({
-                    title: 'Apakah Anda yakin?',
-                    text: "Data kamar akan dihapus!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Ya, hapus!'
-                }).then((result) => {
-                    if (result.isConfirmed && form) {
-                        form.submit(); // Kirim form DELETE ke server
-                    }
-                });
-            }
+  priceInput.addEventListener('input', e => {
+    // ambil hanya angka
+    let nums = e.target.value.replace(/\D/g, '');
+    // format dan tambahkan prefix Rp
+    e.target.value = nums
+      ? 'Rp ' + new Intl.NumberFormat('id-ID').format(nums)
+      : '';
+  });
+
+  addRoomForm.addEventListener('submit', e => {
+    // sebelum submit, hilangkan semua non-digit
+    priceInput.value = priceInput.value.replace(/\D/g, '');
+  });
 });
+</script>
 
-});
 
-        });
-
-        // Format harga
-        const priceInput = document.getElementById('price');
-        priceInput.addEventListener('input', function (e) {
-            let value = this.value.replace(/[^\d]/g, '');
-            if (value) this.value = new Intl.NumberFormat('id-ID').format(value);
-            else this.value = '';
-        });
-
-        document.getElementById('price').addEventListener('input', function (e) {
-            let value = this.value.replace(/\D/g, '');
-            if (value.length > 9) value = value.slice(0, 9);
-            this.value = new Intl.NumberFormat('id-ID').format(value);
-        });
-
-        document.getElementById('addRoomForm').addEventListener('submit', function (e) {
-            const priceField = document.getElementById('price');
-            priceField.value = priceField.value.replace(/\./g, ''); // hapus titik agar jadi angka murni
-        });
-    </script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     // Fungsi showToast
     const toastElement = document.getElementById('toast');
@@ -816,4 +946,330 @@
         });
     });
 </script>
+
+{{-- Leaflet JS --}}
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Ambil koordinat awal, fallback ke tengah kota jika kosong
+      let lat = parseFloat('{{ $property->latitude }}');
+      let lng = parseFloat('{{ $property->longitude }}');
+      if (isNaN(lat) || isNaN(lng)) {
+        lat = -6.200000;  // Jakarta default
+        lng = 106.816666;
+      }
+
+      // Inisialisasi peta
+      const map = L.map('map').setView([lat, lng], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Buat marker (draggable)
+      let marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+      // Fungsi update hidden inputs
+      function updateCoords(latlng) {
+        document.getElementById('latitude').value  = latlng.lat.toFixed(6);
+        document.getElementById('longitude').value = latlng.lng.toFixed(6);
+      }
+
+      // Update saat drag selesai
+      marker.on('dragend', function(e) {
+        updateCoords(e.target.getLatLng());
+      });
+
+      // Saat user klik di peta: pindahkan marker atau buat baru
+      map.on('click', function(e) {
+        const pos = e.latlng;
+        marker.setLatLng(pos);     // pindahkan marker
+        updateCoords(pos);
+        // kalau awalnya marker null, bisa:
+        // marker = L.marker(pos, { draggable: true }).addTo(map);
+      });
+    });
+  </script>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('facilityInput');
+    const dropdown = document.getElementById('facilityDropdown');
+    const selectedDiv = document.getElementById('selectedFacilities');
+    const hiddenContainer = document.getElementById('hiddenFacilitiesContainer');
+
+    let facilities = []; // cache suggestion
+
+    // Fetch list facility (bisa endpoint your-route)
+    async function loadFacilities() {
+    const res = await fetch("{{ route('property.get-selected-facilities', $property->property_id) }}");
+      facilities = await res.json(); // [{id, name},...]
+    }
+    loadFacilities();
+
+    // Render dropdown filtered
+    input.addEventListener('input', () => {
+      const term = input.value.toLowerCase().trim();
+      dropdown.innerHTML = '';
+      if (!term) return;
+      facilities
+        .filter(f => f.name.toLowerCase().includes(term))
+        .slice(0, 10)
+        .forEach(f => {
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'list-group-item list-group-item-action';
+          item.textContent = f.name;
+          item.dataset.id = f.id;
+          dropdown.appendChild(item);
+        });
+    });
+
+    // Pilih dari dropdown
+    dropdown.addEventListener('click', e => {
+      if (!e.target.dataset.id) return;
+      const id = e.target.dataset.id;
+      const name = e.target.textContent;
+
+      // Cegah duplikasi
+      if (hiddenContainer.querySelector(`input[value="${id}"]`)) {
+        input.value = '';
+        dropdown.innerHTML = '';
+        return;
+      }
+
+      // Tambah tag
+      const tag = document.createElement('div');
+      tag.className = 'badge bg-primary d-flex align-items-center gap-1 px-2 py-1';
+      tag.innerHTML = `
+        ${name}
+        <button type="button" class="btn-close btn-close-white btn-sm ms-1 remove-facility"></button>
+      `;
+      tag.dataset.id = id;
+      selectedDiv.appendChild(tag);
+
+      // Hidden input
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'facilities[]';
+      hidden.value = id;
+      hiddenContainer.appendChild(hidden);
+
+      // Bersihkan
+      input.value = '';
+      dropdown.innerHTML = '';
+    });
+
+    // Hapus tag
+    selectedDiv.addEventListener('click', e => {
+      if (!e.target.classList.contains('remove-facility')) return;
+      const tag = e.target.closest('.badge');
+      const id = tag.dataset.id;
+      // Hapus tag & hidden
+      tag.remove();
+      const hidden = hiddenContainer.querySelector(`input[value="${id}"]`);
+      if (hidden) hidden.remove();
+    });
+
+    // Tutup dropdown klik luar
+    document.addEventListener('click', e => {
+      if (!input.contains(e.target)) dropdown.innerHTML = '';
+    });
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const allFacilities = @json($allFacilities);
+    const input     = document.getElementById('facilityInput');
+    const dropdown  = document.getElementById('facilityDropdown');
+    const selected  = document.getElementById('selectedFacilities');
+    const hiddenBox = document.getElementById('hiddenFacilitiesContainer');
+
+    // Tampilkan dropdown jika ada input
+    input.addEventListener('input', () => {
+      const term = input.value.trim().toLowerCase();
+      dropdown.innerHTML = '';
+      if (!term) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      allFacilities
+        .filter(f => f.facility_name.toLowerCase().includes(term))
+        .slice(0, 10)
+        .forEach(f => {
+          const btn = document.createElement('button');
+          btn.type  = 'button';
+          btn.className = 'list-group-item list-group-item-action';
+          btn.textContent = f.facility_name;
+          btn.dataset.id = f.facility_id;
+          dropdown.appendChild(btn);
+        });
+      dropdown.style.display = dropdown.children.length ? 'block' : 'none';
+    });
+
+    // Klik pilihan dropdown
+    dropdown.addEventListener('click', e => {
+      if (e.target.tagName !== 'BUTTON') return;
+      const id   = e.target.dataset.id;
+      const name = e.target.textContent;
+
+      // hindari duplikat
+      if (hiddenBox.querySelector(`input[value="${id}"]`)) {
+        input.value = '';
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      // buat badge baru
+      const badge = document.createElement('div');
+      badge.className = 'badge bg-primary d-flex align-items-center gap-1 px-2 py-1';
+      badge.dataset.id = id;
+      badge.innerHTML = `
+        ${name}
+        <button type="button" class="btn-close btn-close-white btn-sm remove-facility ms-1"></button>
+      `;
+      selected.appendChild(badge);
+
+      // buat hidden input
+      const hidden = document.createElement('input');
+      hidden.type  = 'hidden';
+      hidden.name  = 'facilities[]';
+      hidden.value = id;
+      hiddenBox.appendChild(hidden);
+
+      // bersihkan
+      input.value = '';
+      dropdown.style.display = 'none';
+    });
+
+    // Hapus badge & hidden input
+    selected.addEventListener('click', e => {
+      if (!e.target.classList.contains('remove-facility')) return;
+      const badge = e.target.closest('.badge');
+      const id    = badge.dataset.id;
+      badge.remove();
+      const hid   = hiddenBox.querySelector(`input[value="${id}"]`);
+      if (hid) hid.remove();
+    });
+
+    // klik di luar untuk tutup dropdown
+    document.addEventListener('click', e => {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+  const provSel  = document.getElementById('provinceSelect');
+  const regSel   = document.getElementById('regencySelect');
+  const distSel  = document.getElementById('districtSelect');
+  const subdSel  = document.getElementById('subdistrictSelect');
+
+  async function fillWeb(url, elm, placeholder) {
+    elm.innerHTML = `<option>Memuat…</option>`;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'X-CSRF-TOKEN': csrfToken,
+          'Accept': 'application/json'
+        }
+      });
+      if (!res.ok) {
+        elm.innerHTML = `<option value="">Gagal memuat (${res.status})</option>`;
+        return;
+      }
+      const data = await res.json();
+      // unwrap kalau dibungkus: { cities: […] } atau langsung array
+      const list = data.cities || data.districts || data.subdistricts || data;
+
+      elm.innerHTML = `<option value="">${placeholder}</option>`;
+      if (!Array.isArray(list) || list.length === 0) {
+        elm.innerHTML = `<option value="">Tidak ada data</option>`;
+        return;
+      }
+
+      list.forEach(item => {
+        // cari key yang berakhiran _id atau 'id'
+        const idKey   = Object.keys(item)
+                         .find(k => k.toLowerCase().endsWith('_id') || k.toLowerCase()==='id');
+        // cari key yang berakhiran _name atau 'name'
+        const nameKey = Object.keys(item)
+                         .find(k => k.toLowerCase().endsWith('_name') || k.toLowerCase()==='name');
+        if (!idKey || !nameKey) return;
+
+        const opt = document.createElement('option');
+        opt.value = item[idKey];
+        opt.text  = item[nameKey];
+        elm.appendChild(opt);
+      });
+    } catch (err) {
+      console.error('fillWeb error:', err);
+      elm.innerHTML = `<option value="">Gagal memuat: ${err.message}</option>`;
+    }
+  }
+
+  provSel.addEventListener('change', () => {
+    if (!provSel.value) {
+      regSel.innerHTML  = `<option value="">Pilih Kota/Kabupaten</option>`;
+      distSel.innerHTML = `<option value="">Pilih Kecamatan</option>`;
+      subdSel.innerHTML = `<option value="">Pilih Kelurahan</option>`;
+      return;
+    }
+    fillWeb(`/cities/${provSel.value}`, regSel, 'Pilih Kota/Kabupaten');
+    distSel.innerHTML = `<option value="">Pilih Kecamatan</option>`;
+    subdSel.innerHTML = `<option value="">Pilih Kelurahan</option>`;
+  });
+
+  regSel.addEventListener('change', () => {
+    if (!regSel.value) {
+      distSel.innerHTML = `<option value="">Pilih Kecamatan</option>`;
+      subdSel.innerHTML = `<option value="">Pilih Kelurahan</option>`;
+      return;
+    }
+    fillWeb(`/districts/${regSel.value}`, distSel, 'Pilih Kecamatan');
+    subdSel.innerHTML = `<option value="">Pilih Kelurahan</option>`;
+  });
+
+  distSel.addEventListener('change', () => {
+    if (!distSel.value) {
+      subdSel.innerHTML = `<option value="">Pilih Kelurahan</option>`;
+      return;
+    }
+    fillWeb(`/subdistricts/${distSel.value}`, subdSel, 'Pilih Kelurahan');
+  });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  document.body.addEventListener('click', function(e){
+    const btn = e.target.closest('.confirm-delete');
+    if (!btn) return;
+    e.preventDefault();
+
+    // cari form delete‐room terdekat
+    const form = btn.closest('.delete-room-form');
+
+    Swal.fire({
+      title: 'Yakin menghapus kamar ini?',
+      text: "Data kamar akan dihapus permanen!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Ya, hapus',
+      cancelButtonText: 'Batal'
+    }).then(result => {
+      if (result.isConfirmed) {
+        form.submit();  // hanya submit form delete‐room
+      }
+    });
+  });
+});
+</script>
+
 @endsection

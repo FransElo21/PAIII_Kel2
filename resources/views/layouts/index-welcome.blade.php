@@ -211,7 +211,7 @@
           <a href="{{ route('landingpage') }}" class="d-flex align-items-center text-decoration-none">
               <img src="{{ asset('assets/images/newLogohommie.png') }}" 
                   alt="Hommie Logo" 
-                  width="100" 
+                  width="120" 
                   class="logo-img me-2 mt-3">
           </a>
       </div>
@@ -230,15 +230,15 @@
           <ul class="navbar-nav align-items-center gap-4">
               <!-- Beranda -->
               <li class="nav-item">
-                  <a class="{{ Route::currentRouteName() == 'landingpage' ? 'nav-link fw-bold text-success' : 'nav-link fw-semibold text-dark' }}"
+                  <a class="{{ Route::currentRouteName() == 'landingpage' ? 'nav-link fs-6 fw-bold text-success' : 'nav-link fw-semibold text-dark' }}"
                     href="{{ route('landingpage') }}">Beranda</a>
               </li>
 
               <!-- Dropdown Property -->
               <li class="nav-item dropdown">
-                  <a class="{{ in_array(Route::currentRouteName(), ['homestay.properties', 'kost.properties']) ? 'nav-link dropdown-toggle fw-bold text-success' : 'nav-link dropdown-toggle fw-semibold text-dark' }}"
+                  <a class="{{ in_array(Route::currentRouteName(), ['homestay.properties', 'kost.properties']) ? 'nav-link dropdown-toggle fw-bold fs-4 text-success' : 'nav-link dropdown-toggle fw-semibold fs-6 text-dark' }}"
                     href="#" data-bs-toggle="dropdown">
-                      <i class="material-icons-outlined fs-6 me-1">home</i> Property
+                      Property
                   </a>
                   <ul class="dropdown-menu shadow border-0 rounded-4 p-2">
                       <li><a class="dropdown-item {{ Route::currentRouteName() == 'homestay.properties' ? 'active bg-success-subtle text-success' : '' }}" href="{{ route('homestay.properties') }}">Homestay</a></li>
@@ -248,16 +248,52 @@
 
               <!-- Tentang -->
               <li class="nav-item">
-                  <a class="{{ Route::currentRouteName() == 'tentang' ? 'nav-link fw-bold text-success' : 'nav-link fw-semibold text-dark' }}"
+                  <a class="{{ Route::currentRouteName() == 'tentang' ? 'nav-link fw-bold text-success' : 'nav-link fs-6 fw-semibold text-dark' }}"
                     href="{{ route('tentang') }}">Tentang</a>
               </li>
 
               <!-- Jika Belum Login -->
+              <style>
+                .btn-login-custom {
+                    border-radius: 30px;
+                    font-weight: 600;
+                    font-size: 1rem;
+                    background: #289A84;
+                    color: #fff !important;
+                    box-shadow: 0 2px 10px rgba(40,154,132,0.08);
+                    transition: background 0.2s, box-shadow 0.2s;
+                }
+
+                .btn-login-custom:hover {
+                    background: #1f7d67;
+                    color: #fff !important;
+                }
+
+                .btn-register-custom {
+                    border-radius: 30px;
+                    font-weight: 600;
+                    font-size: 1rem;
+                    border: 2px solid #289A84;
+                    background: #fff;
+                    color: #289A84 !important;
+                    transition: background 0.2s, color 0.2s, border 0.2s;
+                }
+
+                .btn-register-custom:hover {
+                    background: #e6f7f1;
+                    color: #1f7d67 !important;
+                    border: 2px solid #1f7d67;
+                }
+              </style>
               @guest
-                  <li class="nav-item">
+                  <li class="nav-item d-flex align-items-center gap-2">
                       <a href="{{ route('login') }}" 
-                        class="btn btn-gradient-login px-4 py-2 shadow-sm d-flex align-items-center gap-2">
-                          <i class="material-icons-outlined fs-6">account_circle</i> Login
+                          class="btn btn-success btn-login-custom d-flex align-items-center gap-2 px-4 py-2">
+                          <i class="material-icons-outlined fs-6">account_circle</i> Masuk
+                      </a>
+                      <a href="{{ route('register') }}" 
+                          class="btn btn-outline-success btn-register-custom d-flex align-items-center gap-2 px-4 py-2">
+                          <i class="material-icons-outlined fs-6">person_add</i> Daftar
                       </a>
                   </li>
               @endguest
@@ -289,39 +325,68 @@
                       </ul>
                   </li>
 
+                  <style>
+                    .btn-login-custom { /* ... tetapkan styling lama ... */ }
+                    .btn-register-custom { /* ... */ }
+
+                    .avatar-initials {
+                      display: inline-flex;
+                      align-items: center;
+                      justify-content: center;
+                      background: #289A84;        /* bisa diganti / di-hash dinamis */
+                      color: #fff;
+                      font-weight: 600;
+                      text-transform: uppercase;
+                      border-radius: 50%;
+                      user-select: none;
+                    }
+                  </style>
+
                   <!-- Profile -->
                   <li class="nav-item dropdown">
-                      <a href="#" class="dropdown-toggle d-flex align-items-center gap-2 text-decoration-none" data-bs-toggle="dropdown">
-                          <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}" 
-                              class="rounded-circle border p-1" 
-                              width="40" height="40" 
-                              alt="Profile">
-                      </a>
-                      <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 overflow-hidden">
-                          <li class="text-center p-3 profile-header">
-                              <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}" 
-                                  class="rounded-circle border p-1 mb-2" 
-                                  width="60" height="60" 
-                                  alt="Profile">
-                              <h6 class="fw-semibold mb-0">{{ Auth::user()->name }}</h6>
-                              <small class="text-muted">{{ Auth::user()->email }}</small>
-                          </li>
-                          <li><hr class="dropdown-divider m-0"></li>
-                          <li>
-                              <a class="dropdown-item d-flex align-items-center gap-2 py-3" href="{{ route('profileuser.show') }}">
-                                  <i class="material-icons-outlined fs-6">person_outline</i> Profile
-                              </a>
-                          </li>
-                          <li><hr class="dropdown-divider m-0"></li>
-                          <li>
-                              <form id="logoutForm" action="{{ route('logout') }}" method="POST">
-                                  @csrf
-                                  <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-3 text-danger">
-                                      <i class="material-icons-outlined fs-6">power_settings_new</i> Logout
-                                  </button>
-                              </form>
-                          </li>
-                      </ul>
+                    <a href="#" class="nav-link dropdown-toggle p-0" data-bs-toggle="dropdown">
+                      @if(Auth::user()->profile_picture)
+                        <img src="{{ asset('storage/'.Auth::user()->profile_picture) }}"
+                            alt="{{ Auth::user()->name }}"
+                            class="rounded-circle border"
+                            style="width:40px; height:40px; object-fit:cover;">
+                      @else
+                        <div class="avatar-initials" style="width:40px; height:40px;">
+                          {{ Auth::user()->initials }}
+                        </div>
+                      @endif
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 overflow-hidden">
+                      <li class="text-center p-3 bg-light">
+                        @if(Auth::user()->profile_picture)
+                          <img src="{{ asset('storage/'.Auth::user()->profile_picture) }}"
+                              class="rounded-circle border mb-2"
+                              style="width:60px; height:60px; object-fit:cover;">
+                        @else
+                          <div class="avatar-initials" style="width:60px; height:60px; font-size:24px;">
+                            {{ Auth::user()->initials }}
+                          </div>
+                        @endif
+                        <h6 class="fw-semibold mb-0">{{ Auth::user()->name }}</h6>
+                        <small class="text-muted">{{ Auth::user()->email }}</small>
+                      </li>
+                      <li><hr class="dropdown-divider m-0"></li>
+                      <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 py-3"
+                          href="{{ route('profileuser.show') }}">
+                          <i class="material-icons-outlined fs-6">person_outline</i> Profil
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider m-0"></li>
+                      <li>
+                        <form action="{{ route('logout') }}" method="POST">
+                          @csrf
+                          <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-3 text-danger">
+                            <i class="material-icons-outlined fs-6">power_settings_new</i> Logout
+                          </button>
+                        </form>
+                      </li>
+                    </ul>
                   </li>
               @endauth
           </ul>
@@ -348,11 +413,35 @@
       height: 200px; /* Sesuaikan tinggi */
       object-fit: cover;
     }
+
+    footer {
+  background-color: #27445d;
+  color: white;
+  padding: 60px 0 30px;
+}
+
+footer h5,
+footer h6 {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+footer a {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+footer a:hover {
+  color: white;
+  text-decoration: none;
+}
   </style>
 
   <!--start main wrapper-->
   <main class="main-wrapper" data-bs-spy="scroll" data-bs-target="#Parent_Scroll_Div" data-bs-smooth-scroll="false" tabindex="0">
-    <div class="main-content pt-4">
+    <div class="main-content">
       @yield('content')
     </div>
   </main>
@@ -361,103 +450,75 @@
 
 
   <!--start footer -->
-  <section class="page-footer mt-5 py-5">
-    <div class="container py-4 px-4 px-lg-0">
-      <div class="row g-4">
-        <div class="col-12 col-xl-4">
-          <div class="footer-widget-1">
-            <div class="footer-logo mb-4">
-              {{-- <img src="assets/images/logo1.png" width="160" alt=""> --}}
+  <footer id="contact" class="mt-5 py-5 text-white">
+      <div class="container">
+        <div class="row justify-content-between">
+          <!-- Info -->
+          <div class="col-lg-4 col-md-6 mb-4">
+          <a href="{{ route('landingpage') }}" class="d-flex align-items-center text-decoration-none">
+          <img src="{{ asset('assets/images/newLogohommiee.jpg') }}" 
+               alt="Hommie Logo" 
+               width="120" 
+               class="logo-img me-2">
+        </a>
+            <p class="mb-4 mt-4">
+              Hunian nyaman dan strategis untuk pelajar, pekerja, dan wisatawan.
+              Akses mudah ke pusat kota, kampus, dan tempat wisata.
+            </p>
+            <div class="social-icons d-flex gap-3">
+              <a href="#"><i class="bi bi-facebook fs-4 text-light"></i></a>
+              <a href="#"><i class="bi bi-instagram fs-4 text-light"></i></a>
+              <a href="#"><i class="bi bi-twitter-x fs-4 text-light"></i></a>
+              <a href="#"><i class="bi bi-whatsapp fs-4 text-light"></i></a>
             </div>
-            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-              Explicabo voluptatem mollitia et repellat qui dolorum quasi.</p>
-            <p class="mb-2"><strong>Address: </strong>B895 Sudan Street,<br> United Kingdom, Pin 569874</p>
-            <p class="mb-2"><strong>Phone: </strong>+01-854-256-49</p>
-            <p class="mb-0"><strong>Email: </strong>info@example.com</p>
-            <div class="play-store-images d-flex align-items-center gap-3 mt-4">
-               <a href="javascript:;">
-                 <img src="assets/images/google-play-store.png" width="160" alt="">
-               </a>
-               <a href="javascript:;">
-                <img src="assets/images/apple-store.png" width="160" alt="">
-              </a>
+          </div>
+
+          <!-- Link -->
+          <div class="col-lg-3 col-md-6 mb-4">
+            <h6 class="mb-4">Navigasi</h6>
+            <ul class="list-unstyled">
+              <li class="mb-3">
+                <a href="#" class="text-light text-decoration">Beranda</a>
+              </li>
+              <li class="mb-3">
+                <a href="#" class="text-light text-decoration-none">Properti</a>
+              </li>
+              <li class="mb-3">
+                <a href="#" class="text-light text-decoration-none"
+                  >Tentang Kami</a
+                >
+              </li>
+              <li class="mb-3">
+                <a href="#" class="text-light text-decoration-none">Kontak</a>
+              </li>
+              <li class="mb-3">
+                <a href="#" class="text-light text-decoration-none">FAQ</a>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Kontak -->
+          <div class="col-lg-4 col-md-6 mb-4">
+            <h6 class="mb-4">Hubungi Kami</h6>
+            <div class="d-flex mb-4">
+              <i class="bi bi-geo-alt me-3 mt-1"></i>
+              <p class="mb-0">Jl. Contoh No.123, Kota Lorem</p>
+            </div>
+            <div class="d-flex mb-4">
+              <i class="bi bi-telephone me-3 mt-1"></i>
+              <p class="mb-0">(021) 123-4567</p>
+            </div>
+            <div class="d-flex mb-4">
+              <i class="bi bi-envelope me-3 mt-1"></i>
+              <p class="mb-0">info@kosthomestay.com</p>
             </div>
           </div>
         </div>
-        <div class="col-12 col-xl-2">
-          <div class="footer-widget-2">
-            <div class="footer-links">
-              <h5 class="mb-4">Useful Links</h5>
-              <div class="d-flex flex-column gap-2">
-                <a href="javascript:;">Home</a>
-                <a href="javascript:;">About us</a>
-                <a href="javascript:;">Services</a>
-                <a href="javascript:;">Portfolio</a>
-                <a href="javascript:;">Contact</a>
-                <a href="javascript:;">Terms of service</a>
-                <a href="javascript:;">Privacy policy</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-xl-2">
-          <div class="footer-widget-3">
-            <div class="footer-links">
-              <h5 class="mb-4">Our Services</h5>
-              <div class="d-flex flex-column gap-2">
-                <a href="javascript:;">Product Development</a>
-                <a href="javascript:;">Graphic Design</a>
-                <a href="javascript:;">Human resourse</a>
-                <a href="javascript:;">Software Developer</a>
-                <a href="javascript:;">Web Design</a>
-                <a href="javascript:;">CRM Management</a>
-                <a href="javascript:;">eCommerce website</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-xl-4">
-          <div class="footer-widget-4">
-            <h5 class="mb-4">Our Newsletter</h5>
-            <div class="d-flex flex-column gap-2">
-              <p>Join our newsletter to get the most recent information about our goods and services!</p>
-              <form>
-                <div class="input-group subscribe-control">
-                  <input type="text" class="form-control">
-                  <button class="btn btn-grd btn-grd-primary px-4" type="button">Subscribe</button>
-                </div>
-              </form>
-            </div>
-            <h6 class="mb-3 mt-4">Follow Us</h6>
-            <div class="d-flex align-items-center justify-content-start gap-3">
-              <a href="javascript:;"
-                class="wh-42 bg-grd-deep-blue text-white rounded-circle d-flex align-items-center justify-content-center"><i
-                  class="bi bi-linkedin fs-5"></i></a>
-              <a href="javascript:;"
-                class="wh-42 bg-grd-info text-white rounded-circle d-flex align-items-center justify-content-center"><i
-                  class="bi bi-facebook fs-5"></i></a>
-              <a href="javascript:;"
-                class="wh-42 bg-grd-danger text-white rounded-circle d-flex align-items-center justify-content-center"><i
-                  class="bi bi-youtube fs-5"></i></a>
-              <a href="javascript:;"
-                class="wh-42 bg-grd-voilet text-white rounded-circle d-flex align-items-center justify-content-center"><i
-                  class="bi bi-twitter-x fs-5"></i></a>
-            </div>
-          </div>
-        </div>
+      </div>
+    </footer>
+
   
-      </div><!--end row-->
-    </div>
-  </section>
   <!--end footer section-->
-
-
-  <!--start footer strip-->
-   <footer class="footer-strip py-3 px-4 px-lg-0 text-center border-top">
-     <p class="mb-0">© 2024. www.codervent.com. | All rights reserved.</p>
-   </footer>
-  <!--end footer strip-->
-
 
   <!--Start Back To Top Button-->
      <a href="javaScript:;" class="back-to-top"><i class="material-icons-outlined">arrow_upward</i></a>
@@ -494,6 +555,25 @@
                     <a class="nav-link" href="{{ route('login') }}">Login</a>
                 </li>
             @endguest
+            @auth
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle fw-semibold d-flex align-items-center gap-2" href="#"
+             data-bs-toggle="dropdown">
+            <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}"
+                 class="rounded-circle border" width="30" alt="Profile">
+            {{ Auth::user()->name }}
+          </a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{{ route('profileuser.show') }}">Profile</a></li>
+            <li>
+              <form id="logoutFormMobile" action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="dropdown-item text-danger">Logout</button>
+              </form>
+            </li>
+          </ul>
+        </li>
+      @endauth
         </ul>
     </div>
   </div>

@@ -20,7 +20,6 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow-md);
       padding: 2rem;
-      margin-top: -3rem;
     }
   
     .search-container h4 {
@@ -179,8 +178,8 @@
 <!-- Search Form Section -->
 <section class="container mt-5">
     <div class="search-container">
-      <h4 class="fw-bold mb-3">
-        <i class="fas fa-home me-2 text-success"></i> Cari Kost Murah
+      <h4 class="fw-bold mb-4">
+        <i class="fas fa-home text-success"></i> Cari Kost Murah
       </h4>
   
       <!-- Form pencarian -->

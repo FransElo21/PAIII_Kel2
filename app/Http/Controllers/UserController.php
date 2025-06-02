@@ -8,7 +8,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class UserController extends Controller
 {
@@ -161,48 +164,82 @@ class UserController extends Controller
     }    
          
 
-    public function pemesanan(Request $request)
-    {
-        // 1. Ambil semua parameter dari request
-        $encodedRooms = $request->query('rooms');
-        $propertyId = $request->query('property_id'); // Tambahkan ini untuk ambil property_id
-        $userId = $request->query('user_id'); // Jika butuh user_id
-        
-        // 2. Validasi parameter wajib
-        if (!$encodedRooms || !$propertyId) {
-            return back()->with('error', 'Data pemesanan tidak lengkap.');
-        }
+public function pemesanan(Request $request)
+{
+    $propertyId = $request->input('property_id');
+    $bookingData = $request->input('booking_data');
+    $roomsInput = json_decode($bookingData, true);
 
-        try {
-            // 3. Decode JSON rooms dari URL
-            $selectedRooms = json_decode(urldecode($encodedRooms), true);
-            
-            // 4. Ambil data dari database menggunakan stored procedures
-            $property = DB::select('CALL view_propertyById(?)', [$propertyId]);
-            $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$propertyId]);
+    if (!$propertyId || !$roomsInput || count($roomsInput) == 0) {
+        return back()->with('error', 'Data pemesanan tidak lengkap.');
+    }
 
-            $propertyImages = DB::select('CALL get_propertyImagesByProperty(?)', [$propertyId]);
-            $images = $propertyImages; // Gunakan data asli tanpa pluck
-            
-            // 5. Ambil detail kamar dari database (opsional, jika perlu validasi)
-            $rooms = DB::select("CALL get_RoomsByPropertyId(?)", [$propertyId]);
+    $checkIn = $roomsInput[0]['check_in'] ?? null;
+    $checkOut = $roomsInput[0]['check_out'] ?? null;
 
-            // 6. Format data agar bisa digunakan di view
-            $property = $property[0] ?? null; // Ambil objek tunggal dari array
+    // Validasi tanggal
+    if (!$checkIn || !$checkOut) {
+        return back()->with('error', 'Tanggal check-in/check-out belum diisi.');
+    }
+    if ($checkOut <= $checkIn) {
+        return back()->with('error', 'Tanggal check-out harus setelah check-in!');
+    }
 
-            return view('customers.pemesanan', compact(
-                'selectedRooms',
-                'property',
-                'fasilitas',
-                'rooms',
-                'images'
-            ));
-            
-        } catch (\Exception $e) {
-            // 7. Handle error database
-            return back()->with('error', 'Gagal memuat data pemesanan: ' . $e->getMessage());
+    $property = DB::select('CALL view_propertyById(?)', [$propertyId]);
+    $rooms = collect(DB::select('CALL get_RoomsByPropertyId(?)', [$propertyId]))->keyBy('room_id');
+
+    $selectedRooms = [];
+    $totalPrice = 0;
+
+    $duration = \Carbon\Carbon::parse($checkIn)->diffInDays(\Carbon\Carbon::parse($checkOut));
+    if ($duration < 1) {
+        return back()->with('error', 'Durasi inap minimal 1 malam.');
+    }
+
+    foreach ($roomsInput as $item) {
+        $roomId = $item['room_id'];
+        $qty = intval($item['quantity']);
+        if ($qty > 0) {
+            if (!isset($rooms[$roomId])) return back()->with('error', 'Kamar tidak ditemukan.');
+            if ($qty > $rooms[$roomId]->available_room) return back()->with('error', 'Stok kamar tidak cukup.');
+            $subtotal = $rooms[$roomId]->latest_price * $qty * $duration;
+            $totalPrice += $subtotal;
+            $selectedRooms[] = [
+                'room_id' => $roomId,
+                'room_type' => $rooms[$roomId]->room_type,
+                'quantity' => $qty,
+                'price_per_room' => $rooms[$roomId]->latest_price,
+                'subtotal' => $subtotal,
+            ];
         }
     }
+
+    if (count($selectedRooms) == 0) {
+        return back()->with('error', 'Pilih minimal 1 kamar.');
+    }
+
+    session([
+        'booking.selected_rooms' => $selectedRooms,
+        'booking.property_id' => $propertyId,
+        'booking.check_in' => $checkIn,
+        'booking.check_out' => $checkOut,
+        'booking.total_price' => $totalPrice,
+        'booking.duration' => $duration,
+    ]);
+
+    $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$propertyId]);
+    $images = DB::select('CALL get_propertyImagesByProperty(?)', [$propertyId]);
+
+    return view('customers.pemesanan', [
+        'selectedRooms' => $selectedRooms,
+        'property' => $property[0] ?? null,
+        'fasilitas' => $fasilitas,
+        'images' => $images,
+        'totalPrice' => $totalPrice,
+        'checkIn' => $checkIn,
+        'checkOut' => $checkOut
+    ]);
+}
 
     public function profile()
     {
@@ -223,133 +260,309 @@ class UserController extends Controller
         return view('customers.tentang'); // Pastikan file 'tentang.blade.php' ada di resources/views/
     }
 
-    public function store_bokings(Request $request)
-    {
-        // Validasi input pengguna
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'nik' => 'required|digits:16',
-            'email' => 'required|email|max:255',
-            'guest_option' => 'required|in:saya,lain',
-            'nama_tamu' => $request->guest_option === 'lain' ? 'required|string|max:255' : 'nullable',
-            'property_id' => 'required|integer|exists:properties,id',
-            'check_in' => 'required|date',
-            'check_out' => 'required|date|after:check_in',
-            'total_price' => 'required|numeric|min:0',
-            'rooms' => 'required|json'
-        ]);
-    
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-    
-        try {
-            // Pastikan pengguna login
-            if (!Auth::check()) {
-                return back()->withErrors(['error' => 'Silakan login terlebih dahulu']);
-            }
-    
-            $data = $request->all();
-            $userId = Auth::id();
-    
-            // Decode data kamar
-            $rooms = json_decode($data['rooms'], true);
-            if (!is_array($rooms)) {
-                throw new \Exception("Data kamar tidak valid");
-            }
-    
-            // Siapkan data untuk dikirim ke SP
-            $guestName = $data['guest_option'] === 'saya' 
-                ? $data['name'] 
-                : $data['nama_tamu'];
-    
-            $payload = [
-                'user_id' => $userId,
-                'property_id' => $data['property_id'],
-                'check_in' => $data['check_in'],
-                'check_out' => $data['check_out'],
-                'total_price' => $data['total_price'],
-                'guest_name' => $guestName,
-                'email' => $data['email'],
-                'nik' => $data['nik'],
-                'rooms' => $rooms,
-            ];
-    
-            // Panggil Stored Procedure (SP)
-            $result = DB::select('CALL create_Booking(?)', [json_encode($payload)]);
-            $bookingId = $result[0]->booking_id;
-    
-            // Arahkan ke halaman pembayaran
-            return redirect()->route('payment.show', ['booking_id' => $bookingId]);
-        } catch (\Exception $e) {
-            // Tangkap error dan kembalikan ke halaman sebelumnya
-            return back()->withErrors(['error' => 'Gagal menyimpan pemesanan: ' . $e->getMessage()]);
-        }
+
+public function store_bokings(Request $request)
+{
+    if (! Auth::check()) {
+        return back()->withErrors(['error' => 'Silakan login terlebih dahulu']);
     }
 
-    public function payment_show($booking_id)
-    {
-        // Panggil stored procedure
-        $bookingDetails = DB::select('CALL get_BookingDetails(?)', [$booking_id]);
-    
-        // Pastikan data ditemukan
-        if (empty($bookingDetails)) {
-            abort(404);
-        }
-    
-        // Ambil data booking utama (dari item pertama)
-        $booking = $bookingDetails[0]; // Sekarang $booking adalah objek
-    
-        // Ambil semua detail kamar (seluruh array)
-        $rooms = $bookingDetails;
-    
-        // Kirim data ke view
-        return view('customers.pembayaran', compact('booking', 'rooms'));
+    // Ambil data booking awal dari session
+    $selectedRooms = session('booking.selected_rooms');
+    $propertyId    = session('booking.property_id');
+    $checkIn       = session('booking.check_in');
+    $checkOut      = session('booking.check_out');
+    $totalPrice    = session('booking.total_price');
+    $userDetails   = session('booking.user_details', []);
+    $userId        = Auth::id();
+
+    if (! $selectedRooms || ! $propertyId || ! $checkIn || ! $checkOut || empty($userDetails)) {
+        return back()->with('error', 'Data pemesanan tidak lengkap atau sudah expired. Ulangi proses.');
     }
+
+    // Siapkan payload untuk SP create_Booking
+    $payload = [
+        'user_id'     => $userId,
+        'property_id' => $propertyId,
+        'check_in'    => $checkIn,
+        'check_out'   => $checkOut,
+        'total_price' => $totalPrice,
+        'guest_name'  => $userDetails['guest_name'],
+        'email'       => $userDetails['email'],
+        'nik'         => $userDetails['nik'],
+        'rooms'       => $selectedRooms,
+    ];
+
+    // Panggil SP untuk membuat booking
+    $result = DB::select('CALL create_Booking(?)', [json_encode($payload)]);
+    $bookingId = $result[0]->booking_id ?? null;
+
+    if (! $bookingId) {
+        return back()->withErrors(['error' => 'Gagal menyimpan pemesanan.']);
+    }
+
+    // *** Setelah booking berhasil dibuat, langsung generate Snap Token ***
+    try {
+        Config::$serverKey    = config('services.midtrans.serverKey');
+        Config::$isProduction = config('services.midtrans.isProduction', false);
+        Config::$isSanitized  = true;
+        Config::$is3ds        = true;
+
+        $transactionDetails = [
+            'order_id'     => 'BOOKING-' . $bookingId,
+            'gross_amount' => (int)$totalPrice,
+        ];
+        $customerDetails = [
+            'first_name' => $userDetails['guest_name'],
+            'email'      => $userDetails['email'],
+        ];
+        $params = [
+            'transaction_details' => $transactionDetails,
+            'customer_details'    => $customerDetails,
+            'enabled_payments'    => ['gopay', 'bank_transfer'],
+        ];
+
+        $snapToken = Snap::getSnapToken($params);
+
+        // Simpan snapToken ke DB (opsional, sesuai SP yang Anda miliki)
+        DB::statement('CALL update_snap_token(?, ?)', [$bookingId, $snapToken]);
+    } catch (\Exception $e) {
+        Log::error('Midtrans Error: ' . $e->getMessage());
+        // Kalau gagal bikin Snap Token, redirect ke halaman error
+        return back()->withErrors(['error' => 'Gagal membuat Snap Token: ' . $e->getMessage()]);
+    }
+
+    // Hapus session booking supaya tidak double submit
+    session()->forget([
+        'booking.selected_rooms',
+        'booking.property_id',
+        'booking.check_in',
+        'booking.check_out',
+        'booking.total_price',
+        'booking.duration',
+        'booking.user_details',
+    ]);
+
+    // Redirect ke halaman pembayaran dengan menambahkan snap_token sebagai query param
+    return redirect()->route('payment.show', [
+        'booking_id' => $bookingId,
+        'snap_token' => $snapToken,
+    ]);
+}
+
+
+public function confirm_booking(Request $request)
+{
+    if (! Auth::check()) {
+        return back()->withErrors(['error' => 'Silakan login terlebih dahulu']);
+    }
+
+    // Ambil data booking awal dari session
+    $selectedRooms = session('booking.selected_rooms');
+    $propertyId    = session('booking.property_id');
+    $checkIn       = session('booking.check_in');
+    $checkOut      = session('booking.check_out');
+    $totalPrice    = session('booking.total_price');
+
+    if (! $selectedRooms || ! $propertyId || ! $checkIn || ! $checkOut) {
+        return back()->with('error', 'Data pemesanan tidak lengkap atau sudah expired. Ulangi proses.');
+    }
+
+    // VALIDASI input Isi Data Diri
+    $validator = Validator::make($request->all(), [
+        'name'         => 'required|string|max:255',
+        'nik'          => 'required|digits:16',
+        'email'        => 'required|email|max:255',
+        'guest_option' => 'required|in:saya,lain',
+        'nama_tamu'    => $request->input('guest_option') === 'lain'
+                            ? 'required|string|max:255'
+                            : 'nullable',
+    ]);
+
+    if ($validator->fails()) {
+        return back()->withErrors($validator)->withInput();
+    }
+
+    // Tentukan nama tamu
+    $guestName = $request->input('guest_option') === 'saya'
+                 ? $request->input('name')
+                 : $request->input('nama_tamu');
+
+    // Simpan detail user ke session
+    session([
+        'booking.user_details' => [
+            'name'         => $request->input('name'),
+            'nik'          => $request->input('nik'),
+            'email'        => $request->input('email'),
+            'guest_option' => $request->input('guest_option'),
+            'nama_tamu'    => $request->input('nama_tamu'),
+            'guest_name'   => $guestName,
+        ]
+    ]);
+
+    // Setelah validasi dan simpan session, redirect ke halaman konfirmasi (GET)
+    return redirect()->route('booking.confirm.show');
+}
+
+public function show_confirm()
+{
+    if (! Auth::check()) {
+        return redirect()->route('login')->withErrors(['error' => 'Silakan login terlebih dahulu']);
+    }
+
+    // Ambil data booking awal dari session
+    $selectedRooms = session('booking.selected_rooms');
+    $propertyId    = session('booking.property_id');
+    $checkIn       = session('booking.check_in');
+    $checkOut      = session('booking.check_out');
+    $totalPrice    = session('booking.total_price');
+    $userDetails   = session('booking.user_details', []);
+
+    if (! $selectedRooms || ! $propertyId || ! $checkIn || ! $checkOut || empty($userDetails)) {
+        // Belum punya data lengkap, arahkan user kembali ke halaman Isi Data Diri atau halaman awal
+        return redirect()->route('some.booking.page')->with('error', 'Data pemesanan belum lengkap. Isi kembali formulir.');
+    }
+
+    // 1) Ambil detail property menggunakan SP
+    $propertyResult = DB::select('CALL view_propertyById(?)', [$propertyId]);
+    if (! $propertyResult || count($propertyResult) === 0) {
+        return back()->with('error', 'Property tidak ditemukan.');
+    }
+    $property = $propertyResult[0];
+
+    // 2) Ambil daftar gambar properti lewat SP
+    $images = DB::select('CALL get_Property_Images(?)', [$propertyId]);
+
+    // Render view konfirmasi
+    return view('customers.konfirmasi-pemesanan', [
+        'currentStep'   => 2,
+        'property'      => $property,
+        'images'        => $images,
+        'selectedRooms' => $selectedRooms,
+        'checkIn'       => $checkIn,
+        'checkOut'      => $checkOut,
+        'totalPrice'    => $totalPrice,
+        'userDetails'   => $userDetails,
+    ]);
+}
+
+
+    // public function payment_show($booking_id)
+    // {
+    //     // Panggil stored procedure
+    //     $bookingDetails = DB::select('CALL get_BookingDetails(?)', [$booking_id]);
+    
+    //     // Pastikan data ditemukan
+    //     if (empty($bookingDetails)) {
+    //         abort(404);
+    //     }
+    
+    //     // Ambil data booking utama (dari item pertama)
+    //     $booking = $bookingDetails[0]; // Sekarang $booking adalah objek
+    
+    //     // Ambil semua detail kamar (seluruh array)
+    //     $rooms = $bookingDetails;
+    
+    //     // Kirim data ke view
+    //     return view('customers.pembayaran', compact('booking', 'rooms'));
+    // }
     
     public function riwayat_transaksi(Request $request)
-    {
-        $userId = auth()->id();
-        if (!$userId) {
-            return redirect()->route('login');
+{
+    // 1. Pastikan user sudah login
+    $userId = auth()->id();
+    if (! $userId) {
+        return redirect()->route('login');
+    }
+
+    // 2. Ambil query parameter 'status' (jika ada), misal ?status=Belum Dibayar
+    $statusFilter = $request->query('status');
+
+    // 3. Hitung tanggal hari ini dalam format YYYY-MM-DD
+    $today = Carbon::now()->toDateString();
+
+    // 4. Cari booking yang sudah lewat check_out untuk user ini
+    //    a) status = 'Belum Dibayar' & check_out < hari ini -> ubah ke 'Kadaluarsa'
+    //    b) status = 'Berhasil'     & check_out < hari ini -> ubah ke 'Selesai'
+    try {
+        // 4a. Cari semua ID booking agar status perlu di‐set ke 'Kadaluarsa'
+        $toExpire = DB::table('bookings')
+            ->where('user_id', $userId)
+            ->whereDate('check_out', '<', $today)
+            ->where('status', 'Belum Dibayar')
+            ->pluck('id');
+
+        foreach ($toExpire as $bookingId) {
+            // Panggil SP sehingga hanya status yang berubah, stok tidak terpengaruh
+            DB::statement('CALL update_booking_status1(?, ?)', [
+                $bookingId,
+                'Kadaluarsa'
+            ]);
         }
 
-        $status = $request->query('status');
+        // 4b. Cari semua ID booking agar status perlu di‐set ke 'Selesai'
+        $toFinish = DB::table('bookings')
+            ->where('user_id', $userId)
+            ->whereDate('check_out', '<', $today)
+            ->where('status', 'Berhasil')
+            ->pluck('id');
 
-        $results = DB::select('CALL get_BookingsByUserIdtest(?, ?)', [$userId, $status]);
+        foreach ($toFinish as $bookingId) {
+            // Panggil SP sehingga stok otomatis di‐increment,
+            // lalu status diubah menjadi 'Selesai'
+            DB::statement('CALL update_booking_status(?, ?)', [
+                $bookingId,
+                'Selesai'
+            ]);
+        }
+    } catch (\Exception $e) {
+        Log::error("Gagal meng‐update status otomatis (Kadaluarsa/Selesai) untuk user #{$userId}: " . $e->getMessage());
+        // Jika gagal, lanjutkan saja agar user tetap bisa melihat riwayat
+    }
 
-        // Kelompokkan booking dan detail kamar
-        $bookings = collect($results)->groupBy('booking_id')->map(function ($group) {
+    // 5. Panggil Stored Procedure untuk mengambil semua booking + detail kamar
+    //    SP get_BookingsByUserIdtest(user_id, status)
+    $results = DB::select('CALL get_BookingsByUserIdtest(?, ?)', [$userId, $statusFilter]);
+
+    // 6. Susun hasil SP menjadi koleksi per booking_id
+    $bookings = collect($results)
+        ->groupBy('booking_id')
+        ->map(function ($group) {
             $booking = $group->first();
 
-            // Ambil semua detail kamar
+            // Ambil semua detail kamar untuk booking ini
             $details = $group->map(function ($item) {
                 return [
-                    'room_type' => $item->room_type,
-                    'quantity' => $item->quantity,
+                    'room_type'      => $item->room_type,
+                    'quantity'       => $item->quantity,
                     'price_per_room' => $item->price_per_room,
-                    'subtotal' => $item->subtotal,
+                    'subtotal'       => $item->subtotal,
                 ];
             });
 
             return (object)[
-                'booking_id' => $booking->booking_id,
-                'property_name' => $booking->property_name,
-                'property_address' => $booking->property_address,
-                'check_in' => $booking->check_in,
-                'check_out' => $booking->check_out,
-                'total_price' => $booking->total_price,
-                'status' => $booking->status,
-                'guest_name' => $booking->guest_name,
-                'email' => $booking->email,
-                'reviewed' => $booking->reviewed,
-                'property_image' => $booking->property_image,
-                'rooms' => $details,
+                'booking_id'          => $booking->booking_id,
+                'property_name'       => $booking->property_name,
+                'property_address'    => $booking->property_address,
+                'alamat_selengkapnya' => $booking->alamat_selengkapnya,
+                'check_in'            => $booking->check_in,
+                'check_out'           => $booking->check_out,
+                'total_price'         => $booking->total_price,
+                'status'              => $booking->status,
+                'guest_name'          => $booking->guest_name,
+                'email'               => $booking->email,
+                'reviewed'            => $booking->reviewed,
+                'property_image'      => $booking->property_image,
+                'rooms'               => $details,
             ];
-        })->values();
+        })
+        ->values();
 
-        return view('customers.riwayat-transaksi', compact('bookings'));
-    }
+    // 7. Kirim data ke view 'customers.riwayat-transaksi'
+    return view('customers.riwayat-transaksi', compact('bookings'));
+}
+
+
 
     public function search_welcomeProperty(Request $request)
     {

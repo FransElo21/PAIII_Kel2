@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\API\MidtransCallbackController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
@@ -72,13 +73,25 @@ Route::middleware(['auth', 'check_role:3'])->group(function () {
     Route::get('/riwayat-transaksi/{booking_id}', [UserController::class, 'detail_transaksi'])->name('riwayat-transaksi.detail');
 
     // Pemesanan (Booking)
-    Route::get('/pemesanan', [UserController::class, 'pemesanan'])->name('pemesanan.index');
-    Route::post('/pemesanan-store', [UserController::class, 'store_bokings'])->name('booking.store');
+    Route::post('/pemesanan', [UserController::class, 'pemesanan'])->name('pemesanan.index');
+
+    // Route GET untuk menampilkan halaman Konfirmasi (menarik data dari session)
+    Route::get('/booking-confirm', [UserController::class, 'show_confirm'])
+        ->name('booking.confirm.show');
+
+    // Route POST yang memproses data Isi Data Diri → simpan di session → load konfirmasi
+    Route::post('/booking-confirm', [UserController::class, 'confirm_booking'])
+        ->name('booking.confirm.post');
+
+    // Route POST untuk benar-benar menyimpan booking (dari halaman Konfirmasi)
+    Route::post('/pemesanan-store', [UserController::class, 'store_bokings'])
+        ->name('booking.store');
+
     Route::get('/pemesanan-kost', [BookingController::class, 'showKostBooking'])->name('booking.kost');
     Route::post('/store-bokingkost', [BookingController::class, 'store_bokingkost'])->name('store_bokingkost');
 
     // Pembayaran (Payment)
-    Route::get('/pembayaran/{booking_id}', [UserController::class, 'payment_show'])->name('payment.show');
+    // Route::get('/pembayaran/{booking_id}', [UserController::class, 'payment_show'])->name('payment.show');
     Route::get('/pembayaran/sukses/{booking_id}', [UserController::class, 'payment_success'])->name('booking.success');
 });
 
@@ -106,9 +119,15 @@ Route::get('/pemilik/riwayat-transaksi', [OwnerController::class, 'riwayat_trans
 
 // Payment routes
 Route::get('/booking/{booking_id}/payment', [PaymentController::class, 'payment_show'])->name('payment.show');
-Route::post('/payment/process', [PaymentController::class, 'process'])->name('payment.process');
-Route::get('/payment/success/{bookingId}', [PaymentController::class, 'success'])->name('payment.success');
+// Route::post('/payment/process', [PaymentController::class, 'process'])->name('payment.process');
+Route::get('/payment/success/{booking_id}', [PaymentController::class, 'success'])->name('payment.success');
 Route::post('/payment/notification', [PaymentController::class, 'notification']);
+
+Route::post('/payment/process', [PaymentController::class, 'process'])->name('payment.process');
+Route::post('/payment/cancel/{booking_id}', [PaymentController::class, 'cancel'])->name('payment.cancel');
+
+
+
 
 
 // ===============================
@@ -144,7 +163,7 @@ Route::middleware(['auth', 'check_role:2'])->group(function () {
     Route::post('/property/room/add', [OwnerController::class, 'addRoom'])->name('property.room.add');   
     Route::get('/property/room/{id}/edit', [OwnerController::class, 'editRoom'])->name('property.room.edit');
     Route::put('/property/room/update', [OwnerController::class, 'updateRoom'])->name('property.room.update');
-    Route::delete('/property/room/delete', [OwnerController::class, 'deleteRoom'])->name('property.room.delete');
+    Route::delete('property/room/{room_id}',[OwnerController::class, 'deleteRoom'])->name('property.room.delete');
 
     // Location Routes
     Route::get('/provinces', [LocationController::class, 'getProvinces']);
@@ -158,3 +177,18 @@ Route::middleware(['auth', 'check_role:2'])->group(function () {
 });
 
 Route::get('/booking-owner-detail/{id}', [OwnerController::class, 'detail_transaksi_owner'])->name('booking-owner.detail');
+
+
+// Route::prefix('api')->middleware('api')->group(function () {
+//     Route::post('/midtrans/callback', [MidtransCallbackController::class, 'callback']);
+// });
+
+// Route::post('/midtrans/callback', [MidtransCallbackController::class, 'callback']);
+
+Route::get('/owner/bookings/{booking_id}', [OwnerController::class, 'detail_booking_owner'])
+     ->name('owner.bookings.detail')
+     ->middleware('auth');
+
+
+
+

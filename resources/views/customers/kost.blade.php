@@ -191,7 +191,7 @@
                    name="keyword"
                    class="form-control pe-5" 
                    value="{{ request('keyword') }}" 
-                   placeholder="Masukkan nama Homestay">
+                   placeholder="Masukkan nama Kost">
             <i class="fas fa-search position-absolute end-0 top-50 translate-middle-y me-3 text-secondary"></i>
           </div>
         </div>

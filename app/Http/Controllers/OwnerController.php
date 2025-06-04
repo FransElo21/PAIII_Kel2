@@ -459,13 +459,31 @@ public function addImage(Request $request)
 
     if ($request->hasFile('images')) {
         foreach ($request->file('images') as $image) {
-            $path = $image->store('property_images', 'public');
+            // Generate unique filename using time() and uniqid()
+            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            // Define the destination path for storing images
+            $destinationPath = public_path('storage/property_images');
+
+            // Ensure the folder exists, if not create it
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
+            // Move the uploaded image to the designated folder
+            $image->move($destinationPath, $filename);
+
+            // Store the relative path in the database
+            $path = 'property_images/' . $filename;
+
+            // Call stored procedure to save the image data
             DB::statement("CALL Add_PropertyImage(?, ?)", [$request->property_id, $path]);
         }
     }
 
-    return response()->json(['success' => true, 'message' => 'Gambar berhasil diunggah.']);
+    return response()->json(['success' => true, 'message' => 'Gambar berhasil diunggah terbaru.']);
 }
+
 
 public function addRoom(Request $request)
     {

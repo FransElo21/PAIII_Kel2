@@ -29,7 +29,7 @@ class PaymentController extends Controller
 
         // Cek kadaluarsa booking
         $result = DB::select('CALL check_booking_expiration(?)', [$booking_id]);
-        if ($result && $result[0]->status === 'expired') {
+        if ($result && $result[0]->status === 'Kadaluarsa') {
             return redirect()->route('landingpage')->with('error', 'Booking sudah kadaluarsa.');
         }
 

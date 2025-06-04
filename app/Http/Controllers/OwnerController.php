@@ -230,8 +230,24 @@ public function store_property(Request $request)
 
         // Simpan gambar
         if ($request->hasFile('images')) {
+            $destinationPath = public_path('storage/property_images');
+            
+            // Pastikan foldernya ada
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+
             foreach ($request->file('images') as $image) {
-                $path = $image->store('property_images', 'public');
+                // Generate unique filename
+                $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+                // Pindahkan gambar ke folder yang ditentukan
+                $image->move($destinationPath, $filename);
+
+                // Path relatif untuk disimpan di database
+                $path = 'property_images/' . $filename;
+
+                // Simpan path gambar di database menggunakan stored procedure
                 $payload = json_encode([
                     'property_id' => $newPropertyId,
                     'images_path' => $path,
@@ -486,58 +502,75 @@ public function addImage(Request $request)
 
 
 public function addRoom(Request $request)
-    {
-        $request->validate([
-            'property_id'   => [
-                'required',
-                'integer',
-                Rule::exists('properties', 'id')
-            ],
-            'room_type'     => 'required|string|max:100',
-            'price'         => 'required|numeric|min:0|max:999999999',
-            'stok'          => 'required|integer|min:1',
-            'room_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+{
+    $request->validate([
+        'property_id'   => [
+            'required',
+            'integer',
+            Rule::exists('properties', 'id')
+        ],
+        'room_type'     => 'required|string|max:100',
+        'price'         => 'required|numeric|min:0|max:999999999',
+        'stok'          => 'required|integer|min:1',
+        'room_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    ]);
 
-        try {
-            DB::transaction(function() use ($request, &$newRoom) {
-                $roomData = [
-                    'property_id'    => $request->property_id,
-                    'room_type'      => $request->room_type,
-                    'total_room'     => $request->stok,
-                    'available_room' => $request->stok,
-                ];
-                $roomResult = DB::select('CALL store_room(?)', [json_encode($roomData)]);
-                $roomId     = $roomResult[0]->room_id;
+    try {
+        DB::transaction(function() use ($request, &$newRoom) {
+            $roomData = [
+                'property_id'    => $request->property_id,
+                'room_type'      => $request->room_type,
+                'total_room'     => $request->stok,
+                'available_room' => $request->stok,
+            ];
+            $roomResult = DB::select('CALL store_room(?)', [json_encode($roomData)]);
+            $roomId     = $roomResult[0]->room_id;
 
-                DB::statement('CALL store_roomPrice(?)', [json_encode([
-                    'room_id' => $roomId,
-                    'price'   => $request->price,
-                ])]);
+            DB::statement('CALL store_roomPrice(?)', [json_encode([
+                'room_id' => $roomId,
+                'price'   => $request->price,
+            ])]);
 
-                if ($request->hasFile('room_images')) {
-                    foreach ($request->file('room_images') as $idx => $img) {
-                        $path = $img->store('room_images', 'public');
-                        DB::statement('CALL store_roomImage(?)', [json_encode([
-                            'room_id'    => $roomId,
-                            'image_path' => $path,
-                        ])]);
-                    }
+            // Menyimpan gambar kamar
+            if ($request->hasFile('room_images')) {
+                $destinationPath = public_path('storage/room_images');
+                
+                // Pastikan foldernya ada
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
                 }
-            });
 
-            // redirect dengan flash message
-            return redirect()
-                ->back()
-                ->with('success', 'Kamar berhasil ditambahkan.');
-        }
-        catch (\Exception $e) {
-            // redirect dengan error message
-            return redirect()
-                ->back()
-                ->with('error', 'Gagal menambahkan kamar: ' . $e->getMessage());
-        }
+                foreach ($request->file('room_images') as $img) {
+                    // Buat nama file unik
+                    $filename = time() . '_' . uniqid() . '.' . $img->getClientOriginalExtension();
+
+                    // Pindahkan gambar ke folder yang ditentukan
+                    $img->move($destinationPath, $filename);
+
+                    // Simpan path relatif untuk digunakan di database
+                    $path = 'room_images/' . $filename;
+
+                    // Panggil stored procedure untuk menyimpan gambar
+                    DB::statement('CALL store_roomImage(?)', [json_encode([
+                        'room_id'    => $roomId,
+                        'image_path' => $path,
+                    ])]);
+                }
+            }
+        });
+
+        // redirect dengan flash message
+        return redirect()
+            ->back()
+            ->with('success', 'Kamar berhasil ditambahkan.');
     }
+    catch (\Exception $e) {
+        // redirect dengan error message
+        return redirect()
+            ->back()
+            ->with('error', 'Gagal menambahkan kamar: ' . $e->getMessage());
+    }
+}
 
 public function deleteRoom($room_id)
     {

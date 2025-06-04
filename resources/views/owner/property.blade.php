@@ -41,7 +41,7 @@
                     class="form-control px-5 rounded-pill"
                     type="search"
                     name="search"
-                    placeholder="Search Property"
+                    placeholder="Cari Property"
                     value="{{ request('search') }}"
                 >
                 <span class="material-icons-outlined position-absolute ms-3 translate-middle-y start-0 top-50 fs-5">
@@ -53,7 +53,7 @@
     <div class="col-auto flex-grow-1"></div>
     <div class="col-auto">
         <a href="{{ route('owner.add-property') }}" class="btn btn-primary px-4 rounded-pill">
-            <i class="bi bi-plus-lg me-2"></i> Add Property
+            <i class="bi bi-plus-lg me-2"></i> Tambah Property
         </a>
     </div>
 </div>
@@ -66,11 +66,11 @@
                     <tr>
                         <th><input class="form-check-input" type="checkbox"></th>
                         <th>No.</th>
-                        <th>Property Name</th>
-                        <th>Category</th>
-                        <th>Address</th>
-                        <th>Date</th>
-                        <th class="text-center">Action</th>
+                        <th>Nama Property</th>
+                        <th>Kategoti</th>
+                        <th>Alamat</th>
+                        <th>Tanggal</th>
+                        <th class="text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -350,7 +350,6 @@ public function store_bokings(Request $request)
     ]);
 }
 
-
 public function confirm_booking(Request $request)
 {
     if (! Auth::check()) {
@@ -468,100 +467,113 @@ public function show_confirm()
     // }
     
     public function riwayat_transaksi(Request $request)
-{
-    // 1. Pastikan user sudah login
-    $userId = auth()->id();
-    if (! $userId) {
-        return redirect()->route('login');
-    }
-
-    // 2. Ambil query parameter 'status' (jika ada), misal ?status=Belum Dibayar
-    $statusFilter = $request->query('status');
-
-    // 3. Hitung tanggal hari ini dalam format YYYY-MM-DD
-    $today = Carbon::now()->toDateString();
-
-    // 4. Cari booking yang sudah lewat check_out untuk user ini
-    //    a) status = 'Belum Dibayar' & check_out < hari ini -> ubah ke 'Kadaluarsa'
-    //    b) status = 'Berhasil'     & check_out < hari ini -> ubah ke 'Selesai'
-    try {
-        // 4a. Cari semua ID booking agar status perlu di‐set ke 'Kadaluarsa'
-        $toExpire = DB::table('bookings')
-            ->where('user_id', $userId)
-            ->whereDate('check_out', '<', $today)
-            ->where('status', 'Belum Dibayar')
-            ->pluck('id');
-
-        foreach ($toExpire as $bookingId) {
-            // Panggil SP sehingga hanya status yang berubah, stok tidak terpengaruh
-            DB::statement('CALL update_booking_status1(?, ?)', [
-                $bookingId,
-                'Kadaluarsa'
-            ]);
+    {
+        // 1. Pastikan user sudah login
+        $userId = Auth::id();
+        if (! $userId) {
+            return redirect()->route('login');
         }
 
-        // 4b. Cari semua ID booking agar status perlu di‐set ke 'Selesai'
-        $toFinish = DB::table('bookings')
-            ->where('user_id', $userId)
-            ->whereDate('check_out', '<', $today)
-            ->where('status', 'Berhasil')
-            ->pluck('id');
+        // 2. Ambil query parameter 'status' (jika ada), misal ?status=Belum Dibayar
+        $statusFilter = $request->query('status');
 
-        foreach ($toFinish as $bookingId) {
-            // Panggil SP sehingga stok otomatis di‐increment,
-            // lalu status diubah menjadi 'Selesai'
-            DB::statement('CALL update_booking_status(?, ?)', [
-                $bookingId,
-                'Selesai'
-            ]);
+        // 3. Hitung tanggal hari ini dalam format YYYY-MM-DD
+        $today = Carbon::now()->toDateString();
+
+        // 4. Update otomatis status booking yang sudah lewat check_out:
+        //    a) status = 'Belum Dibayar' & check_out < hari ini → 'Kadaluarsa'
+        //    b) status = 'Berhasil'     & check_out < hari ini → 'Selesai'
+        try {
+            // 4a. Cari semua ID booking agar perlu di‐set ke 'Kadaluarsa'
+            $toExpire = DB::table('bookings')
+                ->where('user_id', $userId)
+                ->whereDate('check_out', '<', $today)
+                ->where('status', 'Belum Dibayar')
+                ->pluck('id');
+
+            foreach ($toExpire as $bookingId) {
+                // Panggil SP agar hanya status yang berubah menjadi 'Kadaluarsa'
+                DB::statement('CALL update_booking_status2(?, ?)', [
+                    $bookingId,
+                    'Kadaluarsa'
+                ]);
+            }
+
+            // 4b. Cari semua ID booking agar perlu di‐set ke 'Selesai'
+            $toFinish = DB::table('bookings')
+                ->where('user_id', $userId)
+                ->whereDate('check_out', '<', $today)
+                ->where('status', 'Berhasil')
+                ->pluck('id');
+
+            foreach ($toFinish as $bookingId) {
+                // Panggil SP agar stok otomatis di‐increment, lalu status diubah ke 'Selesai'
+                DB::statement('CALL update_booking_status2(?, ?)', [
+                    $bookingId,
+                    'Selesai'
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error("Gagal meng‐update status otomatis (Kadaluarsa/Selesai) untuk user #{$userId}: " . $e->getMessage());
+            // Jika gagal, kita tetap lanjutkan agar user bisa melihat riwayat
         }
-    } catch (\Exception $e) {
-        Log::error("Gagal meng‐update status otomatis (Kadaluarsa/Selesai) untuk user #{$userId}: " . $e->getMessage());
-        // Jika gagal, lanjutkan saja agar user tetap bisa melihat riwayat
-    }
 
-    // 5. Panggil Stored Procedure untuk mengambil semua booking + detail kamar
-    //    SP get_BookingsByUserIdtest(user_id, status)
-    $results = DB::select('CALL get_BookingsByUserIdtest(?, ?)', [$userId, $statusFilter]);
+        // 5. Panggil Stored Procedure untuk mengambil semua booking + detail kamar
+        //    SP get_BookingsByUserIdtest(user_id, status)
+        $results = DB::select('CALL get_BookingsByUserIdtest(?, ?)', [$userId, $statusFilter]);
 
-    // 6. Susun hasil SP menjadi koleksi per booking_id
-    $bookings = collect($results)
-        ->groupBy('booking_id')
-        ->map(function ($group) {
-            $booking = $group->first();
+        // 6. Susun hasil SP menjadi koleksi per booking_id
+        $bookings = collect($results)
+            ->groupBy('booking_id')
+            ->map(function ($group) {
+                $booking = $group->first();
 
-            // Ambil semua detail kamar untuk booking ini
-            $details = $group->map(function ($item) {
-                return [
-                    'room_type'      => $item->room_type,
-                    'quantity'       => $item->quantity,
-                    'price_per_room' => $item->price_per_room,
-                    'subtotal'       => $item->subtotal,
+                // Ambil semua detail kamar untuk booking ini
+                $details = $group->map(function ($item) {
+                    return [
+                        'room_type'      => $item->room_type,
+                        'quantity'       => $item->quantity,
+                        'price_per_room' => $item->price_per_room,
+                        'subtotal'       => $item->subtotal,
+                    ];
+                });
+
+                return (object)[
+                    'booking_id'          => $booking->booking_id,
+                    'property_name'       => $booking->property_name,
+                    'property_address'    => $booking->property_address,
+                    'alamat_selengkapnya' => $booking->alamat_selengkapnya,
+                    'check_in'            => $booking->check_in,
+                    'check_out'           => $booking->check_out,
+                    'total_price'         => $booking->total_price,
+                    'status'              => $booking->status,
+                    'guest_name'          => $booking->guest_name,
+                    'email'               => $booking->email,
+                    'reviewed'            => $booking->reviewed,
+                    'property_image'      => $booking->property_image,
+                    'rooms'               => $details,
                 ];
-            });
+            })
+            ->values();
 
-            return (object)[
-                'booking_id'          => $booking->booking_id,
-                'property_name'       => $booking->property_name,
-                'property_address'    => $booking->property_address,
-                'alamat_selengkapnya' => $booking->alamat_selengkapnya,
-                'check_in'            => $booking->check_in,
-                'check_out'           => $booking->check_out,
-                'total_price'         => $booking->total_price,
-                'status'              => $booking->status,
-                'guest_name'          => $booking->guest_name,
-                'email'               => $booking->email,
-                'reviewed'            => $booking->reviewed,
-                'property_image'      => $booking->property_image,
-                'rooms'               => $details,
-            ];
-        })
-        ->values();
+        // 7. Jika ada parameter pencarian 'q', lakukan filter berdasarkan kata kunci
+        if ($request->filled('q')) {
+            $keyword = strtolower($request->input('q'));
 
-    // 7. Kirim data ke view 'customers.riwayat-transaksi'
-    return view('customers.riwayat-transaksi', compact('bookings'));
-}
+            $bookings = $bookings->filter(function ($b) use ($keyword) {
+                // Perbandingan lowercase agar case‐insensitive
+                $propName  = strtolower($b->property_name);
+                $propAddr  = strtolower($b->alamat_selengkapnya);
 
+                return str_contains($propName, $keyword)
+                    || str_contains($propAddr, $keyword);
+            })->values();
+        }
+
+        // 8. Kirim data ke view 'customers.riwayat-transaksi'
+        //    Note: view sudah membaca `request('q')` & `request('status')` untuk mengisi form dan men‐highlight tombol
+        return view('customers.riwayat-transaksi', compact('bookings'));
+    }
 
 
     public function search_welcomeProperty(Request $request)

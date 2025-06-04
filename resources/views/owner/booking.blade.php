@@ -67,10 +67,11 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .status-pending   { background-color: #ffc107; color: #000; }
-    .status-paid      { background-color: #28a745; color: #fff; }
-    .status-cancelled { background-color: #dc3545; color: #fff; }
-    .status-completed { background-color: #17a2b8; color: #fff; }
+    .status-belum-dibayar   { background-color: #ffc107; color: #000; } /* kuning */
+    .status-berhasil        { background-color: #28a745; color: #fff; } /* hijau */
+    .status-dibatalkan      { background-color: #dc3545; color: #fff; } /* merah */
+    .status-selesai         { background-color: #17a2b8; color: #fff; } /* biru */
+
 
     /* Action buttons */
     .action-buttons a {
@@ -172,9 +173,10 @@
             @php 
               $statuses = [
                 ''           => 'Semua', 
-                'pending'    => 'Belum Dibayar', 
-                'paid'       => 'Sudah Bayar', 
-                'cancelled'  => 'Dibatalkan'
+                'Belum Dibayar' => 'Belum Dibayar',
+                'Berhasil'      => 'Berhasil',
+                'Selesai'       => 'Selesai',
+                'Dibatalkan'    => 'Dibatalkan',
               ]; 
             @endphp
             @foreach($statuses as $key => $label)
@@ -231,8 +233,7 @@
                                         </td>
                                         <td>Rp {{ number_format((int)$booking->total_price, 0, ',', '.') }}</td>
                                         <td>
-                                            <span class="status-badge 
-                                                status-{{ $booking->status }}">
+                                            <span class="status-badge status-{{ Str::slug(strtolower($booking->status)) }}">
                                                 {{ ucfirst($booking->status) }}
                                             </span>
                                         </td>

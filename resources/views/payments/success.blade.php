@@ -2,8 +2,8 @@
 @section('content')
 
 @php
-    // Step ini = 3 (Sukses)
-    $currentStep = 3;
+    // Di halaman sukses, step terakhir (4) harus aktif
+    $currentStep = 4;
 @endphp
 
 <style>
@@ -105,38 +105,45 @@
 </style>
 
 <div class="container pt-4">
-    <!-- Silakan gunakan struktur .row/.col sesuai tampilan Anda -->
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <!-- Stepper di Halaman Sukses -->
-            <div class="stepper mb-4">
+                <!-- Stepper di Halaman Sukses -->
+            <div class="stepper">
                 {{-- STEP 1: Isi Data Diri --}}
                 <div class="circle 
                     @if($currentStep >= 1) done @endif 
                     @if($currentStep === 1) active @endif">
-                    <i class="bi bi-person"></i>
+                    <i class="bi bi-person-fill"></i>
                 </div>
                 <div class="line 
                     @if($currentStep >= 2) active-line @endif"></div>
 
-                {{-- STEP 2: Pembayaran --}}
+                {{-- STEP 2: Konfirmasi Pemesanan --}}
                 <div class="circle 
                     @if($currentStep >= 2) done @endif 
                     @if($currentStep === 2) active @endif">
-                    <i class="bi bi-cash-coin"></i>
+                    <i class="bi bi-envelope-check-fill"></i>
                 </div>
                 <div class="line 
                     @if($currentStep >= 3) active-line @endif"></div>
 
-                {{-- STEP 3: Sukses --}}
+                {{-- STEP 3: Pembayaran --}}
                 <div class="circle 
-                    @if($currentStep === 3) active 
-                    @elseif($currentStep > 3) done 
-                    @endif">
-                    <i class="bi bi-check-circle"></i>
+                    @if($currentStep >= 3) done @endif 
+                    @if($currentStep === 3) active @endif">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+                <div class="line 
+                    @if($currentStep >= 4) active-line @endif"></div>
+
+                {{-- STEP 4: Sukses --}}
+                <div class="circle 
+                    @if($currentStep >= 4) done @endif 
+                    @if($currentStep === 4) active @endif">
+                    <i class="bi bi-check-circle-fill"></i>
                 </div>
             </div>
-
+            
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
             <!-- Kartu Konfirmasi Sukses -->
             <div class="card card-custom border-0 overflow-hidden">
                 <div class="card-body p-5 text-center">

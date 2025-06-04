@@ -127,6 +127,12 @@ Route::post('/payment/process', [PaymentController::class, 'process'])->name('pa
 Route::post('/payment/cancel/{booking_id}', [PaymentController::class, 'cancel'])->name('payment.cancel');
 
 
+Route::get('/pemilik/ulasan', [ReviewController::class, 'index'])->name('pemilik.ulasan');
+
+
+Route::get('/admin/pengusaha/unconfirmed', [AdminController::class, 'getUnconfirmed'])->name('admin.pengusaha.unconfirmed');
+Route::post('/pengusaha/confirm', [AdminController::class, 'confirmPengusaha'])->name('admin.pengusaha.confirm');
+
 
 
 

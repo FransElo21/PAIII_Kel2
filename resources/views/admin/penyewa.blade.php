@@ -2,6 +2,29 @@
 @section('content')
 
 <style>
+    /* Styling breadcrumb dan lainnya tetap seperti sebelumnya */
+
+    /* Custom styling untuk icon di dalam input */
+    .input-group .form-control {
+        border-top-left-radius: 25px;
+        border-bottom-left-radius: 25px;
+    }
+    .input-group-text {
+        background-color: #fff;
+        border-top-right-radius: 25px;
+        border-bottom-right-radius: 25px;
+        border-left: none;
+        cursor: pointer;
+    }
+    .input-group-text i {
+        color: #6c757d; /* warna icon */
+    }
+    /* Responsive width */
+    @media (max-width: 576px) {
+        .input-group {
+            width: 100%;
+        }
+    }
      /* Breadcrumb */
         .breadcrumb {
             /* padding: 0.75rem 1.25rem; */
@@ -28,18 +51,36 @@
             color: #289A84;
             font-weight: 600;
         }
-            html {
-                scroll-behavior: smooth;
-            }
 </style>
 
 <div class="container">
     <ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">Users</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Penyewa</li>
+        <li class="breadcrumb-item"><a href="#">Pengguna</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Penyewa</li>
     </ol>
 
-    <h3>Daftar Penyewa (Costumer)</h3>
+    <h3>Daftar Penyewa (Customer)</h3>
+
+    <!-- Form Pencarian -->
+    <form action="{{ route('users.rolePenyewa') }}" method="GET" class="mb-3">
+        <div class="input-group" style="max-width: 350px;">
+            <span class="input-group-text" id="basic-addon1">
+                <i class="bi bi-search"></i>
+            </span>
+            <input
+                type="text"
+                name="search"
+                class="form-control"
+                placeholder="Cari nama, username, atau email..."
+                value="{{ request('search') }}"
+                aria-label="Cari"
+                aria-describedby="basic-addon1"
+            >
+            {{-- <button class="btn btn-primary" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                Cari
+            </button> --}}
+        </div>
+    </form>
 
     <div class="card mt-4">
         <div class="card-body">
@@ -57,38 +98,44 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($users as $user)
+                            @forelse ($users as $user)
                             <tr>
                                 <td><input class="form-check-input" type="checkbox"></td>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $loop->iteration + ($users->currentPage() - 1) * $users->perPage() }}</td>
                                 <td>{{ $user->name ?? $user->username ?? '-' }}</td>
                                 <td>{{ $user->email ?? '-' }}</td>
                                 <td>{{ $user->user_role_id }}</td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <!-- Tombol Edit (Menuju Halaman Edit) -->
                                         <a href="" class="btn btn-warning btn-sm rounded-circle" title="Edit">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>
-
-                                        <!-- Tombol Delete -->
-                                        <form id="delete-form-" action="" method="POST" style="display:inline;">
+                                        <form action="" method="POST" style="display:inline;">
                                             @csrf
-                                            <input type="hidden" name="property_id" value="">
-                                            <button type="button" class="btn btn-danger btn-sm rounded-circle" onclick="" title="Delete">
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-sm rounded-circle" onclick="return confirm('Yakin ingin menghapus user ini?')" title="Delete">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form> 
                                     </div>                              
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center">Data tidak ditemukan.</td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                <div class="mt-3">
+                    {{ $users->links() }}
+                </div>
             </div>
-            
-            <!-- Pagination (jika diperlukan) -->
         </div>
     </div>
+</div>
+
 @endsection

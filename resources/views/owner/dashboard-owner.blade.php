@@ -1,65 +1,62 @@
 @extends('layouts.owner.index-owner')
 @section('content')
 
-{{-- Welcome Card --}}
-<div class="card w-100 overflow-hidden rounded-4 mb-4">
-    <div class="card-body position-relative p-4">
-      <div class="row">
-        <div class="col-12 col-sm-7">
-          <div class="d-flex align-items-center gap-3 mb-5">
-            <img src="assets/images/avatars/01.png" class="rounded-circle bg-grd-info p-1" width="60" height="60" alt="user">
-            {{-- <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('assets/images/avatars/default.png') }}" 
-                 class="rounded-circle bg-grd-info p-1" width="60" height="60" alt="user"> --}}
-            <div>
-              <p class="mb-0 fw-semibold">Welcome back</p>
-              <h4 class="fw-semibold mb-0 fs-4">{{ Auth::user()->name }}!</h4>
+{{-- Welcome Card with Gradient --}}
+<div class="card w-100 overflow-hidden rounded-5 shadow-sm mb-4 border-0">
+    <div class="card-body position-relative p-4" style="background: linear-gradient(135deg, #152C5B, #289A84);">
+        <div class="row align-items-center text-white">
+            <div class="col-md-7">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('owner/assets/images/avatars/default.png') }}" 
+                         class="rounded-circle shadow-sm" width="60" height="60" alt="user">
+                    <div>
+                        <p class="mb-0 fw-light">Selamat Datang Kembali!!</p>
+                        <h4 class="fw-bold mb-0 text-white">{{ Auth::user()->name }}!</h4>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-4">
+                    {{-- Pendapatan Bulan Ini --}}
+                    <div>
+                        <h5 class="mb-1 fw-semibold d-flex align-items-center text-white">
+                            Rp {{ number_format($revenueThisMonth, 0, ',', '.') }}
+                            <i class="bi bi-arrow-up-right-circle-fill text-success ms-2"></i>
+                        </h5>
+                        <small>Pendapatan Bulan Ini</small>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-grd-success" role="progressbar" style="width: 100%" aria-valuenow="100"
+                                aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    {{-- Total Pendapatan --}}
+                    <div>
+                        <h5 class="mb-1 fw-semibold d-flex align-items-center text-white">
+                            Rp {{ number_format($totalRevenue, 0, ',', '.') }}
+                            <i class="bi bi-arrow-up-right-circle-fill text-success ms-2"></i>
+                        </h5>
+                        <small>Total Pendapatan</small>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar bg-grd-success" role="progressbar" style="width: 100%" aria-valuenow="100"
+                                aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="d-flex align-items-center gap-5">
-            {{-- Pendapatan Bulan Ini --}}
-            <div>
-              <h4 class="mb-1 fw-semibold d-flex align-content-center">
-                Rp {{ number_format($revenueThisMonth, 0, ',', '.') }}
-                <i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i>
-              </h4>
-              <p class="mb-3">Pendapatan Bulan Ini</p>
-              <div class="progress mb-0" style="height:5px;">
-                {{-- Progress bar bisa dibuat 100% karena kita tidak memiliki target khusus --}}
-                <div class="progress-bar bg-grd-success" role="progressbar" style="width: 100%" 
-                     aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
+
+            <div class="col-md-5 text-end d-none d-md-block">
+                <img src="{{ asset('owner/assets/images/gallery/welcome-back-3.png') }}" height="180" alt="Welcome Image">
             </div>
-            <div class="vr"></div>
-            {{-- Total Pendapatan --}}
-            <div>
-              <h4 class="mb-1 fw-semibold d-flex align-content-center">
-                Rp {{ number_format($totalRevenue, 0, ',', '.') }}
-                <i class="ti ti-arrow-up-right fs-5 lh-base text-success"></i>
-              </h4>
-              <p class="mb-3">Total Pendapatan</p>
-              <div class="progress mb-0" style="height:5px;">
-                <div class="progress-bar bg-grd-danger" role="progressbar" style="width: 100%" 
-                     aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-              </div>
-            </div>
-          </div>
         </div>
-        <div class="col-12 col-sm-5">
-          <div class="welcome-back-img pt-4">
-             <img src="{{ asset('owner/assets/images/gallery/welcome-back-3.png') }}" height="180" alt="Welcome Image">
-          </div>
-        </div>
-      </div><!--end row-->
     </div>
 </div>
 
-{{-- 3 Card Summary --}}
-<div class="row mb-4">
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm rounded-4 h-100">
+{{-- Summary Cards with Hover Effects --}}
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 rounded-4 border-0 transition-hover hover-lift">
             <div class="card-body d-flex align-items-center gap-3">
-                <div class="bg-light-primary text-primary rounded-circle p-3 d-flex align-items-center justify-content-center" 
-                     style="width: 60px; height: 60px;">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3">
                     <i class="bi bi-house-door-fill fs-4"></i>
                 </div>
                 <div>
@@ -70,63 +67,61 @@
         </div>
     </div>
 
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm rounded-4 h-100">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 rounded-4 border-0 transition-hover hover-lift">
             <div class="card-body d-flex align-items-center gap-3">
-                <div class="bg-light-success text-success rounded-circle p-3 d-flex align-items-center justify-content-center" 
-                     style="width: 60px; height: 60px;">
+                <div class="bg-success bg-opacity-10 text-success rounded-circle p-3">
                     <i class="bi bi-journal-bookmark-fill fs-4"></i>
                 </div>
                 <div>
                     <h5 class="mb-0 fw-bold">{{ $bookingCount }}</h5>
-                    <small class="text-muted">Total Bookings</small>
+                    <small class="text-muted">Total Pemesanan</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm rounded-4 h-100">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100 rounded-4 border-0 transition-hover hover-lift">
             <div class="card-body d-flex align-items-center gap-3">
-                <div class="bg-light-warning text-warning rounded-circle p-3 d-flex align-items-center justify-content-center" 
-                     style="width: 60px; height: 60px;">
+                <div class="bg-warning bg-opacity-10 text-warning rounded-circle p-3">
                     <i class="bi bi-exclamation-triangle-fill fs-4"></i>
                 </div>
                 <div>
                     <h5 class="mb-0 fw-bold">{{ $pendingApprovalCount }}</h5>
-                    <small class="text-muted">Pending Approvals</small>
+                    <small class="text-muted">Menunggu Pembayaran</small>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Chart: Monthly Sales Trend --}}
-<div class="card shadow-sm rounded-4 p-3 mb-4">
-    <h5>Monthly Sales Trend</h5>
+{{-- Chart Area --}}
+<div class="card shadow-sm rounded-4 p-4 mb-4 border-0">
+    <h5 class="mb-3 fw-semibold">Tren Pemesanan Bulanan</h5>
     <canvas id="salesChart" height="100"></canvas>
 </div>
 
 {{-- Recent Bookings Table --}}
-<div class="card shadow-sm rounded-4 p-3">
+<div class="card shadow-sm rounded-4 p-4 border-0">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5>Recent Bookings</h5>
-        <a href="{{ route('pemilik.riwayat-transaksi') }}" class="btn btn-sm btn-primary">
-            View All Bookings
+        <h5 class="fw-semibold">Pemesanan Terbaru</h5>
+        <a href="{{ route('pemilik.riwayat-transaksi') }}" class="btn btn-outline-primary btn-sm px-3 rounded-pill">
+            Lihat Semua
         </a>
     </div>
-    
+
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
+        <table class="table table-borderless table-hover align-middle mb-0">
+            <thead class="table-light">
                 <tr>
-                    <th>#Booking ID</th>
+                    <th>#ID Booking</th>
                     <th>Property</th>
-                    <th>Guest</th>
-                    <th>Total Price</th>
+                    <th>Tamu</th>
+                    <th>Total Harga</th>
                     <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <th>Tanggal</th>
+                    <th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -137,33 +132,34 @@
                     <td>{{ $booking->guest_name ?? $booking->user_name }}</td>
                     <td>Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                     <td>
-                        @if ($booking->status == 'pending')
-                            <span class="badge bg-warning text-dark">Pending</span>
-                        @elseif ($booking->status == 'confirmed' || $booking->status == 'Berhasil')
-                            <span class="badge bg-success">Confirmed</span>
-                        @elseif ($booking->status == 'cancelled' || $booking->status == 'Dibatalkan')
-                            <span class="badge bg-danger">Cancelled</span>
-                        @elseif ($booking->status == 'Belum Dibayar')
-                            <span class="badge bg-secondary">Unpaid</span>
-                        @elseif ($booking->status == 'Kadaluarsa')
-                            <span class="badge bg-secondary">Expired</span>
-                        @elseif ($booking->status == 'Selesai')
-                            <span class="badge bg-info text-white">Completed</span>
-                        @else
-                            <span class="badge bg-secondary">{{ ucfirst($booking->status) }}</span>
-                        @endif
+                        @php
+                            $statusClass = match($booking->status) {
+                                'pending', 'Belum Dibayar' => 'warning',
+                                'confirmed', 'Berhasil' => 'success',
+                                'cancelled', 'Dibatalkan' => 'danger',
+                                'Kadaluarsa' => 'secondary',
+                                'Selesai' => 'info',
+                                default => 'dark'
+                            };
+                        @endphp
+                        <span class="badge bg-{{ $statusClass }} text-white rounded-pill px-3 py-1">
+                            {{ ucfirst($booking->status) }}
+                        </span>
                     </td>
                     <td>{{ \Carbon\Carbon::parse($booking->created_at)->format('d M Y') }}</td>
                     <td>
-                      <a href="{{ route('booking-owner.detail', $booking->id) }}" 
-                         class="btn btn-warning btn-sm rounded-circle" title="Edit">
-                        <i class="bi bi-pencil-square"></i>
-                      </a>
+                        <a 
+                            href="{{ route('owner.bookings.detail', $booking->id) }}" 
+                            class="btn btn-sm btn-info rounded-circle" 
+                            title="Detail"
+                        >
+                            <i class="bi bi-eye"></i>
+                        </a>
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="text-center py-4">No recent bookings found.</td>
+                    <td colspan="7" class="text-center py-4 text-muted">Tidak ada pemesanan terbaru.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -171,40 +167,72 @@
     </div>
 </div>
 
+{{-- Custom CSS for Modern Look --}}
+<style>
+    .transition-hover {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .rounded-pill {
+        border-radius: 50rem !important;
+    }
+</style>
+
 {{-- Bootstrap Icons --}}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"> 
 
 {{-- Chart.js --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+
+{{-- Chart Script --}}
 <script>
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    const salesChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($monthlySalesLabels) !!},
-            datasets: [{
-                label: 'Sales (Rp)',
-                data: {!! json_encode($monthlySalesData) !!},
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { display: true },
-                tooltip: { enabled: true }
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        const salesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($monthlySalesLabels) !!},
+                datasets: [{
+                    label: 'Penjualan (Rp)',
+                    data: {!! json_encode($monthlySalesData) !!},
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#4e73df'
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#fff',
+                        titleColor: '#333',
+                        bodyColor: '#555',
+                        borderColor: '#ddd',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'Rp' + value.toLocaleString();
+                            }
+                        }
+                    }
                 }
             }
-        }
+        });
     });
 </script>
 

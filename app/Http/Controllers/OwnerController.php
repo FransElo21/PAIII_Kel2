@@ -14,111 +14,111 @@ class OwnerController extends Controller
 {
 
 public function showOwnerpage()
-    {
-        $userId = auth()->id();
+{
+    $userId = auth()->id();
 
-        try {
-            // 1. Ambil properti milik owner via Stored Procedure view_propertiesByidowner
-            $properties = DB::select('CALL view_propertiesByidowner(?)', [$userId]);
-            $propertyCount = count($properties);
+    try {
+        // 1. Ambil properti milik owner via Stored Procedure view_propertiesByidowner
+        $properties = DB::select('CALL view_propertiesByidowner(?)', [$userId]);
+        $propertyCount = count($properties);
 
-            // 2. Kumpulkan ID semua properti milik owner
-            $propertyIds = collect($properties)->pluck('id')->toArray();
+        // 2. Kumpulkan ID semua properti milik owner
+        $propertyIds = collect($properties)->pluck('id')->toArray();
 
-            // 3. Jika owner tidak punya properti, set default ke 0 / array kosong
-            if (empty($propertyIds)) {
-                $bookingCount          = 0;
-                $pendingApprovalCount  = 0;
-                $monthlySalesLabels    = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                $monthlySalesData      = array_fill(0, count($monthlySalesLabels), 0);
-                $recentBookings        = collect([]);
-                $revenueThisMonth      = 0;
-                $totalRevenue          = 0;
+        // 3. Jika owner tidak punya properti, set default ke 0 / array kosong
+        if (empty($propertyIds)) {
+            $bookingCount          = 0;
+            $pendingApprovalCount  = 0;
+            $monthlySalesLabels    = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            $monthlySalesData      = array_fill(0, count($monthlySalesLabels), 0);
+            $recentBookings        = collect([]);
+            $revenueThisMonth      = 0;
+            $totalRevenue          = 0;
+        } else {
+            // 4. Hitung Total Bookings
+            $bookingCount = DB::table('bookings')
+                ->whereIn('property_id', $propertyIds)
+                ->count();
+
+            // 5. Hitung Pending Approvals (status 'Belum Dibayar')
+            $pendingApprovalCount = DB::table('bookings')
+                ->whereIn('property_id', $propertyIds)
+                ->where('status', 'Belum Dibayar')
+                ->count();
+
+            /**
+             * 6. Panggil Stored Procedure get_owner_revenue
+             *    Mengembalikan satu record dengan kolom:
+             *      - revenue_this_month
+             *      - total_revenue
+             */
+            $revenueResult = DB::select('CALL get_owner_revenue(?)', [$userId]);
+
+            // SP mengembalikan array dengan 1 elemen stdClass
+            if (isset($revenueResult[0])) {
+                $revenueThisMonth = $revenueResult[0]->revenue_this_month;
+                $totalRevenue     = $revenueResult[0]->total_revenue;
             } else {
-                // 4. Hitung Total Bookings
-                $bookingCount = DB::table('bookings')
-                    ->whereIn('property_id', $propertyIds)
-                    ->count();
-
-                // 5. Hitung Pending Approvals (status 'Belum Dibayar')
-                $pendingApprovalCount = DB::table('bookings')
-                    ->whereIn('property_id', $propertyIds)
-                    ->where('status', 'Belum Dibayar')
-                    ->count();
-
-                /**
-                 * 6. Panggil Stored Procedure get_owner_revenue
-                 *    Mengembalikan satu record dengan kolom:
-                 *      - revenue_this_month
-                 *      - total_revenue
-                 */
-                $revenueResult = DB::select('CALL get_owner_revenue(?)', [$userId]);
-
-                // SP mengembalikan array dengan 1 elemen stdClass
-                if (isset($revenueResult[0])) {
-                    $revenueThisMonth = $revenueResult[0]->revenue_this_month;
-                    $totalRevenue     = $revenueResult[0]->total_revenue;
-                } else {
-                    $revenueThisMonth = 0;
-                    $totalRevenue     = 0;
-                }
-
-                // 7. Data grafik bulanan (status 'confirmed', tahun sekarang)
-                $currentYear = Carbon::now()->year;
-                $monthlySalesLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                $monthlySalesData = [];
-                foreach ($monthlySalesLabels as $index => $month) {
-                    $monthNumber = $index + 1;
-                    $sum = DB::table('bookings')
-                        ->whereIn('property_id', $propertyIds)
-                        ->where('status', 'confirmed')
-                        ->whereYear('created_at', $currentYear)
-                        ->whereMonth('created_at', $monthNumber)
-                        ->sum('total_price');
-                    $monthlySalesData[] = $sum;
-                }
-
-                // 8. Ambil 5 booking terbaru (Recent Bookings)
-                $recentBookings = DB::table('bookings')
-                    ->select(
-                        'bookings.id',
-                        'bookings.status',
-                        'bookings.created_at',
-                        'bookings.check_in',
-                        'bookings.check_out',
-                        'bookings.total_price',
-                        'bookings.guest_name',
-                        'properties.name as property_name',
-                        'users.name as user_name'
-                    )
-                    ->join('properties', 'bookings.property_id', '=', 'properties.id')
-                    ->join('users', 'bookings.user_id', '=', 'users.id')
-                    ->whereIn('bookings.property_id', $propertyIds)
-                    ->orderBy('bookings.created_at', 'desc')
-                    ->limit(5)
-                    ->get();
+                $revenueThisMonth = 0;
+                $totalRevenue     = 0;
             }
 
-            // 9. (Opsional) Ambil total user global
-            $userCount = DB::table('users')->count();
+            // 7. Data grafik bulanan (status 'confirmed', tahun sekarang)
+            $currentYear = Carbon::now()->year;
+            $monthlySalesLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            $monthlySalesData = [];
+            foreach ($monthlySalesLabels as $index => $month) {
+                $monthNumber = $index + 1;
+                $sum = DB::table('bookings')
+                    ->whereIn('property_id', $propertyIds)
+                    ->where('status', 'Selesai')
+                    ->whereYear('created_at', $currentYear)
+                    ->whereMonth('created_at', $monthNumber)
+                    ->sum('total_price');
+                $monthlySalesData[] = $sum;
+            }
 
-            // 10. Render view 'owner.dashboard-owner' dengan variabel‐variabel di atas
-            return view('owner.dashboard-owner', compact(
-                'propertyCount',
-                'bookingCount',
-                'pendingApprovalCount',
-                'userCount',
-                'revenueThisMonth',
-                'totalRevenue',
-                'monthlySalesLabels',
-                'monthlySalesData',
-                'recentBookings'
-            ));
-        } catch (\Exception $e) {
-            // Jika ada error (SP gagal, koneksi, dsb), tampilkan pesan error
-            return back()->withErrors(['error' => 'Gagal mengambil data dashboard: ' . $e->getMessage()]);
+            // 8. Ambil 5 booking terbaru (Recent Bookings)
+            $recentBookings = DB::table('bookings')
+                ->select(
+                    'bookings.id',
+                    'bookings.status',
+                    'bookings.created_at',
+                    'bookings.check_in',
+                    'bookings.check_out',
+                    'bookings.total_price',
+                    'bookings.guest_name',
+                    'properties.name as property_name',
+                    'users.name as user_name'
+                )
+                ->join('properties', 'bookings.property_id', '=', 'properties.id')
+                ->join('users', 'bookings.user_id', '=', 'users.id')
+                ->whereIn('bookings.property_id', $propertyIds)
+                ->orderBy('bookings.created_at', 'desc')
+                ->limit(5)
+                ->get();
         }
+
+        // 9. (Opsional) Ambil total user global
+        $userCount = DB::table('users')->count();
+
+        // 10. Render view 'owner.dashboard-owner' dengan variabel‐variabel di atas
+        return view('owner.dashboard-owner', compact(
+            'propertyCount',
+            'bookingCount',
+            'pendingApprovalCount',
+            'userCount',
+            'revenueThisMonth',
+            'totalRevenue',
+            'monthlySalesLabels',
+            'monthlySalesData',
+            'recentBookings'
+        ));
+    } catch (\Exception $e) {
+        // Jika ada error (SP gagal, koneksi, dsb), tampilkan pesan error
+        return back()->withErrors(['error' => 'Gagal mengambil data dashboard: ' . $e->getMessage()]);
     }
+}
 
 public function showPropertypage(Request $request)
 {

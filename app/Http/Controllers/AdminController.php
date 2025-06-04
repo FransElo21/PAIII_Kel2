@@ -2,79 +2,233 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PengusahaConfirmed;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
+    /**
+     * Menampilkan dashboard admin dengan statistik dan data booking
+     */
+    public function showAdminpage()
+    {
+        try {
+            // Data statistik utama
+            $stats = $this->getDashboardStats();
+            
+            // Data booking terbaru untuk tabel
+            $bookings = DB::select('CALL getBookingsWithProperty()');
+            
+            // Data untuk chart booking 7 hari terakhir
+            $chartData = $this->getBookingChartData();
 
-public function showAdminpage()
+            return view('admin.dashboard-admin', array_merge($stats, [
+                'bookings' => $bookings,
+                'chartLabels' => $chartData['labels'],
+                'chartData' => $chartData['values']
+            ]));
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memuat dashboard: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Mengambil data statistik dashboard
+     */
+    protected function getDashboardStats()
+    {
+        return [
+            'totalPengusaha' => optional(DB::select('CALL getTotalPengusaha()')[0])->total ?? 0,
+            'totalProperty' => optional(DB::select('CALL getTotalProperty()')[0])->total ?? 0,
+            'totalBooking' => optional(DB::select('CALL getTotalBooking()')[0])->total ?? 0,
+        ];
+    }
+
+    /**
+     * Mengambil data chart booking 7 hari terakhir
+     */
+    protected function getBookingChartData()
+    {
+        $startDate = Carbon::now()->subDays(6)->startOfDay();
+        $endDate = Carbon::now()->endOfDay();
+
+        $bookingData = DB::table('bookings')
+            ->select(DB::raw('DATE(check_in) as date'), DB::raw('COUNT(*) as total'))
+            ->whereBetween('check_in', [$startDate, $endDate])
+            ->groupBy(DB::raw('DATE(check_in)'))
+            ->orderBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        // Isi tanggal yang tidak ada data dengan 0
+        $dates = [];
+        for ($i = 0; $i < 7; $i++) {
+            $date = $startDate->copy()->addDays($i)->format('Y-m-d');
+            $dates[$date] = $bookingData[$date] ?? 0;
+        }
+
+        return [
+            'labels' => array_keys($dates),
+            'values' => array_values($dates)
+        ];
+    }
+
+
+public function showUsersRole2Pengusaha(Request $request)
 {
-    // Data statistik lain
-    $totalPengusahaResult = DB::select('CALL getTotalPengusaha()');
-    $totalPropertyResult = DB::select('CALL getTotalProperty()');
-    $totalBookingResult = DB::select('CALL getTotalBooking()');
+    $search = $request->input('search', '');
 
-    $totalPengusaha = $totalPengusahaResult[0]->total ?? 0;
-    $totalProperty = $totalPropertyResult[0]->total ?? 0;
-    $totalBooking = $totalBookingResult[0]->total ?? 0;
+    // Ambil data dari stored procedure
+    $usersRaw = DB::select('CALL getUsersByRole2()');
 
-    // Data booking terbaru untuk tabel
-    $bookings = DB::select('CALL getBookingsWithProperty()');
-
-    // Ambil data booking per hari untuk 7 hari terakhir
-    $startDate = Carbon::now()->subDays(6)->startOfDay(); // 6 hari lalu + hari ini total 7 hari
-    $endDate = Carbon::now()->endOfDay();
-
-    $bookingPerHariRaw = DB::table('bookings')
-        ->select(DB::raw('DATE(check_in) as date'), DB::raw('COUNT(*) as total_booking'))
-        ->whereBetween('check_in', [$startDate, $endDate])
-        ->groupBy(DB::raw('DATE(check_in)'))
-        ->orderBy('date')
-        ->get();
-
-    // Buat array tanggal dan jumlah booking untuk chart
-    $dates = [];
-    $totals = [];
-
-    // Buat semua tanggal 7 hari terakhir dulu dengan default 0
-    for ($i = 0; $i < 7; $i++) {
-        $date = $startDate->copy()->addDays($i)->format('Y-m-d');
-        $dates[$date] = 0;
+    // Filter manual jika ada search
+    if ($search) {
+        $searchLower = strtolower($search);
+        $usersRaw = array_filter($usersRaw, function ($user) use ($searchLower) {
+            return str_contains(strtolower($user->name ?? ''), $searchLower)
+                || str_contains(strtolower($user->username ?? ''), $searchLower)
+                || str_contains(strtolower($user->email ?? ''), $searchLower);
+        });
     }
 
-    // Isi data hasil query ke array tanggal
-    foreach ($bookingPerHariRaw as $item) {
-        $dates[$item->date] = $item->total_booking;
-    }
+    // Convert ke Collection
+    $usersCollection = collect($usersRaw);
 
-    // Pisah key dan value untuk chart js
-    $chartLabels = array_keys($dates);
-    $chartData = array_values($dates);
+    // Pagination manual
+    $currentPage = LengthAwarePaginator::resolveCurrentPage();
+    $perPage = 10;
+    $currentPageItems = $usersCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
-    return view('admin.dashboard-admin', compact(
-        'totalPengusaha', 'totalProperty', 'totalBooking', 'bookings',
-        'chartLabels', 'chartData'
-    ));
+    $paginatedUsers = new LengthAwarePaginator(
+        $currentPageItems,
+        $usersCollection->count(),
+        $perPage,
+        $currentPage,
+        ['path' => LengthAwarePaginator::resolveCurrentPath()]
+    );
+
+    // Return view dengan data paginated dan search
+    return view('admin.pengusaha', [
+        'users' => $paginatedUsers,
+        'search' => $search,
+    ]);
 }
 
-public function showUsersRole2Pengusaha()
-    {
-        // Panggil stored procedure
-        $users = DB::select('CALL getUsersByRole2()');
 
-        // Kirim data ke view
-        return view('admin.pengusaha', compact('users'));
+public function showUsersRole3Penyewa(Request $request)
+{
+    $search = $request->input('search', '');
+
+    $usersRaw = DB::select('CALL getUsersByRole3()');
+
+    // Filter manual jika ada search
+    if ($search) {
+        $searchLower = strtolower($search);
+        $usersRaw = array_filter($usersRaw, function ($user) use ($searchLower) {
+            return str_contains(strtolower($user->name ?? ''), $searchLower)
+                || str_contains(strtolower($user->username ?? ''), $searchLower)
+                || str_contains(strtolower($user->email ?? ''), $searchLower);
+        });
     }
 
-    public function showUsersRole3Penyewa()
-    {
-        // Panggil stored procedure
-        $users = DB::select('CALL getUsersByRole3()');
+    // Convert ke Collection
+    $usersCollection = collect($usersRaw);
 
-        // Kirim data ke view
-        return view('admin.penyewa', compact('users'));
+    // Manual pagination
+    $currentPage = LengthAwarePaginator::resolveCurrentPage();
+    $perPage = 10;
+    $currentPageItems = $usersCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+    $paginatedUsers = new LengthAwarePaginator(
+        $currentPageItems,
+        $usersCollection->count(),
+        $perPage,
+        $currentPage,
+        ['path' => LengthAwarePaginator::resolveCurrentPath()]
+    );
+
+    return view('admin.penyewa', [
+        'users' => $paginatedUsers,
+        'search' => $search,
+    ]);
+}
+
+
+    /**
+     * Mendapatkan data pengguna dengan pagination
+     */
+    protected function getPaginatedUsers($procedure, $perPage = 10)
+    {
+        $usersArray = DB::select($procedure);
+        
+        $page = request()->get('page', 1);
+        $offset = ($page - 1) * $perPage;
+        
+        return new LengthAwarePaginator(
+            array_slice($usersArray, $offset, $perPage),
+            count($usersArray),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
     }
+
+    /**
+     * Mendapatkan data pengusaha yang belum dikonfirmasi (API)
+     */
+    public function getUnconfirmed()
+    {
+        try {
+            $users = DB::select("CALL get_unconfirmed_pengusaha()");
+            return response()->json(['success' => true, 'data' => $users]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat data: '.$e->getMessage()
+            ], 500);
+        }
+    }
+
+
+public function confirmPengusaha(Request $request)
+{
+    try {
+        $request->validate(['user_id' => 'required|integer']);
+
+        $result = DB::select("CALL confirm_pengusaha_account(?)", [$request->user_id]);
+
+        $affectedRows = $result[0]->affected_rows ?? 0;
+
+        if ($affectedRows > 0) {
+            $user = User::find($request->user_id);
+            if ($user && $user->email) {
+                Mail::to($user->email)->send(new PengusahaConfirmed($user));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Akun berhasil dikonfirmasi dan email notifikasi sudah dikirim.'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Tidak ada perubahan data (user tidak ditemukan atau sudah dikonfirmasi).'
+        ], 400);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengkonfirmasi: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 }

@@ -385,14 +385,20 @@
         </li>
           <li>
               <a href="{{ route('owner.property') }}">
-                  <div class="parent-icon"><i class="material-icons-outlined">inventory_2</i></div>
+                  <div class="parent-icon"><i class="material-icons-outlined">real_estate_agent</i></div>
                   <div class="menu-title">Property</div>
               </a>
           </li>
           <li>
               <a href="{{ route('pemilik.riwayat-transaksi') }}">
-                  <div class="parent-icon"><i class="material-icons-outlined">paid</i></div>
-                  <div class="menu-title">Booking</div>
+                  <div class="parent-icon"><i class="material-icons-outlined">event_note</i></div>
+                  <div class="menu-title">Pemesanan</div>
+              </a>
+          </li>
+          <li>
+              <a href="{{ route('pemilik.ulasan') }}">
+                  <div class="parent-icon"><i class="material-icons-outlined">rate_review</i></div>
+                  <div class="menu-title">Ulasan</div>
               </a>
           </li>
           <li>

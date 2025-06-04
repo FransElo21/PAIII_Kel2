@@ -70,4 +70,14 @@ class ReviewController extends Controller
 
         return redirect()->route('riwayat-transaksi.index')->with('success', 'Terima kasih atas ulasannya!');
     }
+    
+    public function index()
+    {
+        $ownerId = Auth::id();
+
+        // Panggil stored procedure dengan parameter ownerId
+        $reviews = DB::select('CALL sp_get_owner_reviews(?)', [$ownerId]);
+
+        return view('owner.ulasan', compact('reviews'));
+    }
 }

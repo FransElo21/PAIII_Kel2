@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HomMie | Dashboard Admin</title>
   <!--favicon-->
-  <link rel="icon" href="{{ asset('assets/images/newLogohommie.png') }}" type="image/png">
+  <link rel="icon" href="{{ asset('assets/images/newLogohommie.png') }}" width="100" type="image/png">
   <!-- loader-->
   <link href="{{ asset('admin/assets/css/pace.min.css') }}" rel="stylesheet">
   <script src="{{ asset('admin/assets/js/pace.min.js') }}"></script>
@@ -361,27 +361,28 @@
         
         <!-- Users (sudah bertingkat) -->
         <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class="material-icons-outlined">people</i></div>
-                <div class="menu-title">Users</div>
-            </a>
-            <ul>
-                <li><a href="{{ route('users.rolePenyewa') }}"><i class="material-icons-outlined">person</i> Penyewa</a></li>
-                <li><a href="{{ route('users.rolePengusaha') }}"><i class="material-icons-outlined">business</i> Pengusaha</a></li>
-            </ul>
+          <a class="has-arrow" href="javascript:;">
+            <div class="parent-icon">
+              <i class="material-icons-outlined">supervised_user_circle</i>
+            </div>
+            <div class="menu-title">Penggguna</div>
+          </a>
+          <ul>
+            <li><a href="{{ route('users.rolePenyewa') }}"><i class="material-icons-outlined">person_pin</i> Penyewa</a></li>
+            <li><a href="{{ route('users.rolePengusaha') }}"><i class="material-icons-outlined">business_center</i> Pengusaha</a></li>
+          </ul>
         </li>
         
         <!-- Property (ditambahkan submenu) -->
         <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class="material-icons-outlined">apartment</i></div>
-                <div class="menu-title">Property</div>
-            </a>
-            <ul>
-                <li><a href="#"><i class="material-icons-outlined">list</i> Daftar Property</a></li>
-                <li><a href="#"><i class="material-icons-outlined">add_circle</i> Tambah Property</a></li>
-                <li><a href="#"><i class="material-icons-outlined">category</i> Kategori</a></li>
-            </ul>
+          <a href="javascript:;" class="has-arrow">
+            <i class="material-icons-outlined">home</i>
+            <div class="menu-title">Properti</div>
+          </a>
+          <ul>
+            <li><a href="?type=homestay"><i class="material-icons-outlined">hotel</i> Homestay</a></li>
+            <li><a href="?type=kost"><i class="material-icons-outlined">single_bed</i> Kost</a></li>
+          </ul>
         </li>
         
         <!-- History (ditambahkan submenu) -->
@@ -415,7 +416,7 @@
 
    <!--start footer-->
    <footer class="page-footer">
-    <p class="mb-0">Copyright © 2024. All right reserved.</p>
+    <p class="mb-0">Hommie © 2024. All right reserved.</p>
   </footer>
   <!--end footer-->
 

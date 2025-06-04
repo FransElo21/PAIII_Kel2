@@ -52,6 +52,7 @@
     transition: background .2s, color .2s;
     margin-right: .5rem;
     margin-bottom: .5rem;
+    text-decoration: none;
   }
   .filter-btn.active,
   .filter-btn:hover {
@@ -156,24 +157,53 @@
 
       {{-- Search & Filters --}}
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        {{-- 1. Form pencarian --}}
         <form class="d-flex search-container mb-3 mb-md-0" action="{{ route('riwayat-transaksi.index') }}" method="GET">
-          <input type="text" name="q" value="{{ request('q') }}" class="form-control me-2" placeholder="Cari Pesanan...">
-          <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+          {{-- Pertahankan parameter status jika sedang difilter --}}
+          <input type="hidden" name="status" value="{{ request('status') }}">
+          <input
+            type="text"
+            name="q"
+            value="{{ request('q') }}"
+            class="form-control me-2"
+            placeholder="Cari Pesanan..."
+          >
+          <button type="submit" class="btn btn-outline-secondary">
+            <i class="bi bi-search"></i>
+          </button>
         </form>
+
+        {{-- 2. Tombol filter status, sertakan parameter 'q' jika ada --}}
         <div>
-          <a href="{{ route('riwayat-transaksi.index') }}"
-             class="filter-btn {{ !request('status') ? 'active' : '' }}">Semua</a>
-          <a href="{{ route('riwayat-transaksi.index', ['status'=>'Belum Dibayar']) }}"
-             class="filter-btn {{ request('status')=='Belum Dibayar'? 'active':'' }}">Belum Bayar</a>
-          <a href="{{ route('riwayat-transaksi.index', ['status'=>'Berhasil']) }}"
-             class="filter-btn {{ request('status')=='Berhasil'? 'active':'' }}">Berhasil</a>
-          <a href="{{ route('riwayat-transaksi.index', ['status'=>'Dibatalkan']) }}"
-             class="filter-btn {{ request('status')=='Dibatalkan'? 'active':'' }}">Dibatalkan</a>
+          @php
+            // Ambil nilai q dari request (bisa kosong)
+            $qParam = request('q') ? ['q' => request('q')] : [];
+          @endphp
+
+          <a
+            href="{{ route('riwayat-transaksi.index', array_merge(['status' => null], $qParam)) }}"
+            class="filter-btn {{ !request('status') ? 'active' : '' }}"
+          >Semua</a>
+
+          <a
+            href="{{ route('riwayat-transaksi.index', array_merge(['status' => 'Belum Dibayar'], $qParam)) }}"
+            class="filter-btn {{ request('status') == 'Belum Dibayar' ? 'active' : '' }}"
+          >Belum Bayar</a>
+
+          <a
+            href="{{ route('riwayat-transaksi.index', array_merge(['status' => 'Berhasil'], $qParam)) }}"
+            class="filter-btn {{ request('status') == 'Berhasil' ? 'active' : '' }}"
+          >Berhasil</a>
+
+          <a
+            href="{{ route('riwayat-transaksi.index', array_merge(['status' => 'Dibatalkan'], $qParam)) }}"
+            class="filter-btn {{ request('status') == 'Dibatalkan' ? 'active' : '' }}"
+          >Dibatalkan</a>
         </div>
       </div>
 
       {{-- Transaction Cards --}}
-      @foreach($bookings as $b)
+      @forelse($bookings as $b)
         @php
           // Parse check-in & check-out
           $checkIn  = \Carbon\Carbon::parse($b->check_in);
@@ -181,24 +211,26 @@
           // Hitung jumlah malam
           $nights = $checkIn->diffInDays($checkOut);
 
-          // Mapping CSS class berdasarkan status (menggunakan status dalam Bahasa Indonesia)
+          // Mapping CSS class berdasarkan status (dalam Bahasa Indonesia)
           $statusClass = match($b->status) {
             'Belum Dibayar' => 'belum-dibayar',
-            'Berhasil'    => 'berhasil',
-            'Selesai'     => 'selesai',
-            'Dibatalkan'  => 'dibatalkan',
-            default       => 'kadaluarsa',
+            'Berhasil'      => 'berhasil',
+            'Selesai'       => 'selesai',
+            'Dibatalkan'    => 'dibatalkan',
+            default         => 'kadaluarsa',
           };
 
-          // Label yang ditampilkan adalah persis value dari $b->status (karena sudah Bahasa Indonesia)
+          // Label yang ditampilkan adalah nilai dari $b->status
           $statusLabel = $b->status;
         @endphp
 
         <div class="transaction-card mb-4">
           <div class="row g-0">
             <div class="col-md-4">
-              <img src="{{ $b->property_image ? asset('storage/'.$b->property_image) : asset('assets/images/property.jpg') }}"
-                   alt="Foto Properti">
+              <img
+                src="{{ $b->property_image ? asset('storage/'.$b->property_image) : asset('assets/images/property.jpg') }}"
+                alt="Foto Properti"
+              >
             </div>
             <div class="col-md-8">
               <div class="transaction-details">
@@ -217,36 +249,36 @@
                 <p class="fw-bold">Total: Rp {{ number_format($b->total_price, 0, ',', '.') }}</p>
 
                 <div class="mt-3">
-                  <a href="{{ route('riwayat-transaksi.detail', $b->booking_id) }}"
-                     class="btn btn-success me-2 rounded-pill">
-                    Lihat Detail
-                  </a>
+                  <a
+                    href="{{ route('riwayat-transaksi.detail', $b->booking_id) }}"
+                    class="btn btn-success me-2 rounded-pill"
+                  >Lihat Detail</a>
 
                   @if($b->status === 'Belum Dibayar')
-                    <a href="{{ route('payment.show', ['booking_id' => $b->booking_id]) }}"
-                       class="btn btn-primary rounded-pill ms-2">
-                      Lanjutkan Pembayaran
-                    </a>
+                    <a
+                      href="{{ route('payment.show', ['booking_id' => $b->booking_id]) }}"
+                      class="btn btn-primary rounded-pill ms-2"
+                    >Lanjutkan Pembayaran</a>
                   @endif
 
-                  @if($checkOut->isPast() 
-                      && $b->status === 'Selesai' 
-                      && !$b->reviewed)
-                    <a href="{{ route('review.create', ['booking_id' => $b->booking_id]) }}"
-                       class="btn btn-outline-success rounded-pill ms-2">
-                      <i class="bi bi-chat-left-text me-1"></i> Ulasan
-                    </a>
+                  @if($checkOut->isPast() && $b->status === 'Selesai' && !$b->reviewed)
+                    <a
+                      href="{{ route('review.create', ['booking_id' => $b->booking_id]) }}"
+                      class="btn btn-outline-success rounded-pill ms-2"
+                    ><i class="bi bi-chat-left-text me-1"></i>Ulasan</a>
                   @endif
                 </div>
               </div>
             </div>
           </div>
         </div>
-      @endforeach
+      @empty
+        <p class="text-center text-muted">Tidak ada transaksi yang sesuai.</p>
+      @endforelse
 
-      {{-- Pagination --}}
-      @if(method_exists($bookings,'links'))
-        <div class="mt-4">{{ $bookings->links() }}</div>
+      {{-- Pagination (jika menggunakan paginate di controller) --}}
+      @if(method_exists($bookings, 'links'))
+        <div class="mt-4">{{ $bookings->appends(request()->only(['q','status']))->links() }}</div>
       @endif
     </section>
   </div>

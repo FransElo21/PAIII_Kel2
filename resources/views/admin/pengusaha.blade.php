@@ -155,22 +155,27 @@
                                 <td class="user-email">{{ $user->email ?? '-' }}</td>
                                 <td>{{ $user->user_role_id }}</td>
                                 <td>
-                                    <div class="d-flex gap-2">
-                                        <!-- Tombol Edit -->
-                                        <a href="" class="btn btn-warning btn-sm rounded-circle" title="Edit">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
+                                <div class="d-flex gap-2">
+                                    {{-- <!-- Tombol Edit -->
+                                    <a href="" class="btn btn-warning btn-sm rounded-circle" title="Edit">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
 
-                                        <!-- Tombol Delete -->
-                                        <form id="delete-form-{{ $user->id }}" action="" method="POST" style="display:inline;">
-                                            @csrf
-                                            <input type="hidden" name="property_id" value="">
-                                            <button type="button" class="btn btn-danger btn-sm rounded-circle" onclick="" title="Delete">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form> 
-                                    </div>                              
-                                </td>
+                                    <!-- Tombol Delete -->
+                                    <form id="delete-form-{{ $user->id }}" action="" method="POST" style="display:inline;">
+                                        @csrf
+                                        <input type="hidden" name="property_id" value="">
+                                        <button type="button" class="btn btn-danger btn-sm rounded-circle" onclick="" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form> --}}
+
+                                    <!-- Tombol Detail -->
+                                    <button type="button" class="btn btn-info btn-sm rounded-circle" data-bs-toggle="modal" data-bs-target="#detailModal" data-user-id="{{ $user->id }}" title="Detail">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
                             </tr>
                             @empty
                             <tr>
@@ -187,6 +192,30 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Detail -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailModalLabel">Detail Pengusaha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="userDetail">
+                    <p><strong>Nama: </strong><span id="userName"></span></p>
+                    <p><strong>Email: </strong><span id="userEmail"></span></p>
+                    <p><strong>Tanggal Daftar: </strong><span id="userCreatedAt"></span></p>
+                </div>
+                <button id="banButton" class="btn btn-danger" style="border-radius: 20px;">Ban Pengusaha</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <script>
     $(document).ready(function() {
@@ -336,6 +365,95 @@
             renderUnconfirmedTable(filtered);
         });
     });
+</script>
+
+<script>
+    $(document).ready(function() {
+    // Event listener untuk tombol Detail
+    $('#detailModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget); // tombol yang mengaktifkan modal
+        var userId = button.data('user-id'); // mengambil ID pengguna dari data atribut
+
+        // Melakukan AJAX untuk mendapatkan data pengusaha
+        $.ajax({
+            url: '{{ route("admin.pengusaha.detail") }}',  // Ganti dengan route untuk mengambil detail pengusaha
+            type: 'GET',
+            data: {
+                user_id: userId
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Isi modal dengan data pengguna
+                    $('#userName').text(response.data.name);
+                    $('#userEmail').text(response.data.email);
+                    $('#userCreatedAt').text(new Date(response.data.created_at).toLocaleDateString());
+
+                    // Mengaktifkan tombol Ban
+                    $('#banButton').data('user-id', userId);
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                Swal.fire('Error', 'Gagal memuat data pengguna', 'error');
+            }
+        });
+    });
+
+    // Event listener untuk tombol Ban
+    $('#banButton').on('click', function() {
+        var userId = $(this).data('user-id');
+
+        // Melakukan AJAX untuk banned user
+        $.ajax({
+            url: '{{ route("admin.ban.akun") }}',  // Ganti dengan route untuk banned user
+            type: 'POST',
+            data: {
+                user_id: userId,
+                _token: '{{ csrf_token() }}'
+            },
+            beforeSend: function() {
+                $('#banButton').prop('disabled', true);
+                $('#banButton').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...');
+            },
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Pengusaha Diblokir',
+                        text: 'Pengusaha berhasil diblokir.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        $('#detailModal').modal('hide');
+                        // Update tampilan jika diperlukan (misalnya hapus row atau ubah status)
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: 'Gagal memblokir pengusaha',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    $('#banButton').prop('disabled', false);
+                    $('#banButton').html('Ban Pengusaha');
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Terjadi kesalahan',
+                    text: 'Gagal memblokir pengusaha',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+                $('#banButton').prop('disabled', false);
+                $('#banButton').html('Ban Pengusaha');
+            }
+        });
+    });
+});
 </script>
 
 @endsection

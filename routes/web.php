@@ -196,5 +196,8 @@ Route::get('/owner/bookings/{booking_id}', [OwnerController::class, 'detail_book
      ->middleware('auth');
 
 
+Route::get('/admin/pengusaha/detail', [AdminController::class, 'getDetailPengusaha'])->name('admin.pengusaha.detail');
+Route::post('/admin/akun/ban', [AdminController::class, 'ban_akun'])->name('admin.ban.akun');
+
 
 

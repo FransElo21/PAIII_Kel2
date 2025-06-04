@@ -231,4 +231,81 @@ public function confirmPengusaha(Request $request)
     }
 }
 
+public function getDetailPengusaha(Request $request)
+{
+    $request->validate([
+        'user_id' => 'required|exists:users,id,user_role_id,2'
+    ]);
+
+    try {
+        $results = DB::select(
+            'CALL sp_get_pengusaha_detail(?)', 
+            [$request->user_id]
+        );
+
+        if (empty($results)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun pengusaha tidak ditemukan.'
+            ], 404);
+        }
+
+        $pengusaha = $results[0];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $pengusaha->id,
+                'name' => $pengusaha->name,
+                'username' => $pengusaha->username,
+                'email' => $pengusaha->email,
+                'email_verified_at' => $pengusaha->email_verified_at,
+                'is_confirmed' => (bool)$pengusaha->is_confirmed,
+                'is_banned' => (bool)$pengusaha->is_banned,
+                'created_at' => $pengusaha->created_at,
+                'updated_at' => $pengusaha->updated_at
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat mengambil data pengusaha.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function ban_akun(Request $request)
+{
+    // Validasi user_id
+    $request->validate([
+        'user_id' => 'required|exists:users,id'
+    ]);
+
+    try {
+        // Panggil stored procedure
+        $result = DB::select(
+            'CALL sp_ban_user(?)', 
+            [$request->user_id]
+        );
+
+        // Ambil hasil pertama dari stored procedure
+        $result = $result[0];
+
+        return response()->json([
+            'success' => (bool)$result->success,
+            'message' => $result->message
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat memblokir pengusaha.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
 }

@@ -211,8 +211,6 @@ public function store_property(Request $request)
             'longitude'         => $request->longitude,
         ]);
 
-        dd($dataProperty);
-
         // Panggil stored procedure
         DB::statement('CALL store_property(?)', [$dataProperty]);
 

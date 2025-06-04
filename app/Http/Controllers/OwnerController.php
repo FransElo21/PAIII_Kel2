@@ -180,7 +180,7 @@ public function store_property(Request $request)
         'property_type_id'  => 'required|integer|exists:property_types,id',
         'subdis_id'         => 'required|integer|exists:subdistricts,id',
         'description'       => 'required|string',
-        'full_address'      => 'required|string',        // ← tambah validasi
+        'full_address'      => 'required|string',        // ← tambahkan validasi
         'latitude'          => 'required|numeric',
         'longitude'         => 'required|numeric',
         'facilities'        => 'nullable|array',
@@ -202,14 +202,16 @@ public function store_property(Request $request)
         // Siapkan payload JSON termasuk full_address
         $dataProperty = json_encode([
             'name'              => $request->name,
-            'property_type_id'  => $request->property_type_id,
-            'subdis_id'         => $request->subdis_id,
+            'property_type_id'  => (int) $request->property_type_id,  // Pastikan ini adalah integer
+            'subdis_id'         => (int) $request->subdis_id,         // Pastikan ini adalah integer
             'description'       => $request->description,
-            'full_address'      => $request->full_address,   // ← tambahkan di sini
+            'full_address'      => $request->full_address,
             'user_id'           => $userId,
             'latitude'          => $request->latitude,
             'longitude'         => $request->longitude,
         ]);
+
+        dd($dataProperty);
 
         // Panggil stored procedure
         DB::statement('CALL store_property(?)', [$dataProperty]);
@@ -263,8 +265,13 @@ public function store_property(Request $request)
 
     } catch (\Exception $e) {
         DB::rollback();
+        
+        // Log error for debugging purposes
+        \Log::error('Error storing property: ' . $e->getMessage());
+
+        // Return error message to the user
         return redirect()->back()
-                         ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+                         ->with('error', 'Terjadi kesalahan saat menambahkan properti: ' . $e->getMessage());
     }
 }
    

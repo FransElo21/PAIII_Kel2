@@ -68,7 +68,7 @@
                         <th>No.</th>
                         <th>Nama Property</th>
                         <th>Kategoti</th>
-                        <th>Alamat</th>
+                        <th>Alamattt</th>
                         <th>Tanggal</th>
                         <th class="text-center">Aksi</th>
                     </tr>

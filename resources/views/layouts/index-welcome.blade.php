@@ -478,13 +478,13 @@ footer a:hover {
             <h6 class="mb-4">Navigasi</h6>
             <ul class="list-unstyled">
               <li class="mb-3">
-                <a href="#" class="text-light text-decoration">Beranda</a>
+                <a href="{{ route('landingpage') }}" class="text-light text-decoration">Beranda</a>
               </li>
               <li class="mb-3">
-                <a href="#" class="text-light text-decoration-none">Properti</a>
+                <a href="{{ route('homestay.properties') }}" class="text-light text-decoration-none">Properti</a>
               </li>
               <li class="mb-3">
-                <a href="#" class="text-light text-decoration-none"
+                <a href="{{ route('tentang') }}" class="text-light text-decoration-none"
                   >Tentang Kami</a
                 >
               </li>

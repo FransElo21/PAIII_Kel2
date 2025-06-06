@@ -12,6 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PaymentController extends Controller
 {
+
     public function payment_show(Request $request, $booking_id)
     {
         // Ambil detail booking dari stored procedure
@@ -33,9 +34,15 @@ class PaymentController extends Controller
             return redirect()->route('landingpage')->with('error', 'Booking sudah kadaluarsa.');
         }
 
-
-        // Ambil snap_token dari query param (yang dikirim dari store_bokings)
+        // Cek apakah snap_token ada di query parameter, jika tidak ambil dari DB
         $snapToken = $request->query('snap_token', null);
+        if (!$snapToken) {
+            // Ambil snap_token dari database berdasarkan booking_id
+            $snapTokenResult = DB::select('CALL get_snap_token(?)', [$booking_id]);
+            if (!empty($snapTokenResult) && isset($snapTokenResult[0]->url_pembayaran)) {
+                $snapToken = $snapTokenResult[0]->url_pembayaran;
+            }
+        }
 
         // Kirim data ke Blade
         return view('customers.pembayaran', compact('booking', 'rooms', 'snapToken'));
@@ -70,7 +77,7 @@ class PaymentController extends Controller
                 'first_name' => $request->input('guest_name'),
                 'email'      => $request->input('email'),
             ],
-            'enabled_payments' => ['gopay','bank_transfer'],
+            'enabled_payments' => ['gopay', 'bank_transfer'],
         ];
 
         try {
@@ -127,8 +134,7 @@ class PaymentController extends Controller
             return redirect()
                 ->route('payment.show', $bookingId)
                 ->with('success', 'Pembayaran berhasil dibatalkan. Silakan pilih ulang metode pembayaran.');
-        } 
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
             // 6. Log error detail untuk debugging
             Log::error("Gagal membatalkan pembayaran booking #{$bookingId}: " . $e->getMessage());
 
@@ -176,6 +182,4 @@ class PaymentController extends Controller
         $pdf = Pdf::loadView('pdf.resi', compact('booking'));
         return $pdf->download('resi_booking_' . $bookingId . '.pdf');
     }
-
-    
 }

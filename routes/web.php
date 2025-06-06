@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\API\MidtransCallbackController;
 use App\Http\Controllers\Auth\EmailVerificationController;
@@ -91,7 +92,6 @@ Route::middleware(['auth', 'check_role:3'])->group(function () {
     Route::post('/store-bokingkost', [BookingController::class, 'store_bokingkost'])->name('store_bokingkost');
 
     // Pembayaran (Payment)
-    // Route::get('/pembayaran/{booking_id}', [UserController::class, 'payment_show'])->name('payment.show');
     Route::get('/pembayaran/sukses/{booking_id}', [UserController::class, 'payment_success'])->name('booking.success');
 });
 
@@ -197,7 +197,35 @@ Route::get('/owner/bookings/{booking_id}', [OwnerController::class, 'detail_book
 
 
 Route::get('/admin/pengusaha/detail', [AdminController::class, 'getDetailPengusaha'])->name('admin.pengusaha.detail');
+Route::get('/admin/penyewa/detail', [AdminController::class, 'getDetailPenyewa'])->name('admin.penyewa.detail');
 Route::post('/admin/akun/ban', [AdminController::class, 'ban_akun'])->name('admin.ban.akun');
+Route::post('admin/unban-akun', [AdminController::class, 'unban_akun'])->name('admin.unban.akun');
 
+// Halaman Homestay
+Route::get('/admin/homestay', [AdminController::class, 'homestayProperty_admin'])->name('admin.homestay');
+// Halaman Kost
+Route::get('/admin/kost', [AdminController::class, 'kostProperty_admin'])->name('admin.kost');
+// Detail Property
+Route::get('/admin/property/{id}', [AdminController::class, 'showDetail'])->name('admin.property.detail');
+
+Route::prefix('admin/tipe-property')->name('admin.tipe_property.')->group(function () {
+    Route::get('/', [AdminController::class, 'index'])->name('index');
+    Route::post('/store', [AdminController::class, 'store'])->name('store');
+    Route::get('/{id}/edit', [AdminController::class, 'edit'])->name('edit');
+    Route::put('/{id}/update', [AdminController::class, 'update'])->name('update');
+    Route::delete('/{id}/destroy', [AdminController::class, 'destroy'])->name('destroy');
+});
+
+Route::prefix('admin/')->name('admin.')->group(function () {
+    Route::get('facilities', [FacilityController::class, 'index'])->name('facilities.index');
+    Route::get('facilities/create', [FacilityController::class, 'create'])->name('facilities.create');
+    Route::post('facilities', [FacilityController::class, 'store'])->name('facilities.store');
+    Route::get('facilities/{id}/edit', [FacilityController::class, 'edit'])->name('facilities.edit');
+    Route::put('facilities/{id}', [FacilityController::class, 'update'])->name('facilities.update');
+    Route::delete('facilities/{id}', [FacilityController::class, 'destroy'])->name('facilities.destroy');
+});
+
+
+Route::get('/admin/ulasan', [AdminController::class, 'index_ulasan'])->name('admin.ulasan');
 
 

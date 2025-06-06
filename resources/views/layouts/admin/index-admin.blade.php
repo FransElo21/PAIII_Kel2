@@ -351,52 +351,70 @@
     <div class="sidebar-nav">
     <div class="sidebar-nav">
     <ul class="metismenu" id="sidenav">
-        <!-- Dashboard -->
-        <li>
-            <a href="{{ route('showAdminpage') }}">
-                <div class="parent-icon"><i class="material-icons-outlined">dashboard</i></div>
-                <div class="menu-title">Dashboard</div>
-            </a>
-        </li>
-        
-        <!-- Users (sudah bertingkat) -->
-        <li>
-          <a class="has-arrow" href="javascript:;">
-            <div class="parent-icon">
-              <i class="material-icons-outlined">supervised_user_circle</i>
-            </div>
-            <div class="menu-title">Penggguna</div>
-          </a>
-          <ul>
-            <li><a href="{{ route('users.rolePenyewa') }}"><i class="material-icons-outlined">person_pin</i> Penyewa</a></li>
-            <li><a href="{{ route('users.rolePengusaha') }}"><i class="material-icons-outlined">business_center</i> Pengusaha</a></li>
-          </ul>
-        </li>
-        
-        <!-- Property (ditambahkan submenu) -->
-        <li>
-          <a href="javascript:;" class="has-arrow">
-            <i class="material-icons-outlined">home</i>
-            <div class="menu-title">Properti</div>
-          </a>
-          <ul>
-            <li><a href="?type=homestay"><i class="material-icons-outlined">hotel</i> Homestay</a></li>
-            <li><a href="?type=kost"><i class="material-icons-outlined">single_bed</i> Kost</a></li>
-          </ul>
-        </li>
-        
-        <!-- History (ditambahkan submenu) -->
-        <li>
-            <a class="has-arrow" href="javascript:;">
-                <div class="parent-icon"><i class="material-icons-outlined">history</i></div>
-                <div class="menu-title">History</div>
-            </a>
-            <ul>
-                <li><a href="#"><i class="material-icons-outlined">receipt</i> Transaksi</a></li>
-                <li><a href="#"><i class="material-icons-outlined">payments</i> Pembayaran</a></li>
-                <li><a href="#"><i class="material-icons-outlined">report</i> Laporan</a></li>
-            </ul>
-        </li>
+      <!-- Dashboard -->
+      <li>
+        <a href="{{ route('showAdminpage') }}">
+          <div class="parent-icon"><i class="material-icons-outlined">dashboard</i></div>
+          <div class="menu-title">Dashboard</div>
+        </a>
+      </li>
+
+      <!-- Users -->
+      <li>
+        <a class="has-arrow" href="javascript:;">
+          <div class="parent-icon"><i class="material-icons-outlined">supervised_user_circle</i></div>
+          <div class="menu-title">Pengguna</div>
+        </a>
+        <ul>
+          <li><a href="{{ route('users.rolePenyewa') }}"><i class="material-icons-outlined">person_pin</i> Penyewa</a></li>
+          <li><a href="{{ route('users.rolePengusaha') }}"><i class="material-icons-outlined">business_center</i> Pengusaha</a></li>
+        </ul>
+      </li>
+
+      <!-- Properti -->
+      <li>
+        <a href="javascript:;" class="has-arrow">
+          <div class="parent-icon"><i class="material-icons-outlined">home</i></div>
+          <div class="menu-title">Properti</div>
+        </a>
+        <ul>
+          <li><a href="{{ route('admin.homestay') }}"><i class="material-icons-outlined">hotel</i> Homestay</a></li>
+          <li><a href="{{ route('admin.kost') }}"><i class="material-icons-outlined">single_bed</i> Kost</a></li>
+        </ul>
+      </li>
+
+      <!-- Konfigurasi -->
+      <li>
+        <a href="javascript:;" class="has-arrow">
+          <div class="parent-icon"><i class="material-icons-outlined">settings</i></div>
+          <div class="menu-title">Konfigurasi</div>
+        </a>
+        <ul>
+          <li><a href="{{ route('admin.tipe_property.index') }}"><i class="material-icons-outlined">category</i>Tipe Property</a></li>
+          <li><a href="{{ route('admin.facilities.index') }}"><i class="material-icons-outlined">room_service</i> Fasilitas Property</a></li>
+          <li><a href="{{ route('admin.ulasan') }}"><i class="material-icons-outlined">rate_review</i> Ulasan & Rating</a></li>
+        </ul>
+      </li>
+
+      <!-- History -->
+      <li>
+        <a class="has-arrow" href="javascript:;">
+          <div class="parent-icon"><i class="material-icons-outlined">history</i></div>
+          <div class="menu-title">History</div>
+        </a>
+        <ul>
+          <li><a href="#"><i class="material-icons-outlined">receipt</i> Transaksi</a></li>
+          <li><a href="#"><i class="material-icons-outlined">payments</i> Pembayaran</a></li>
+        </ul>
+      </li>
+
+      <!-- Laporan -->
+      <li>
+        <a href="">
+          <div class="parent-icon"><i class="material-icons-outlined">assessment</i></div>
+          <div class="menu-title">Laporan</div>
+        </a>
+      </li>
     </ul>
 </div>
   </aside>

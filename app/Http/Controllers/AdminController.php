@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\PengusahaConfirmed;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -20,10 +21,10 @@ class AdminController extends Controller
         try {
             // Data statistik utama
             $stats = $this->getDashboardStats();
-            
+
             // Data booking terbaru untuk tabel
             $bookings = DB::select('CALL getBookingsWithProperty()');
-            
+
             // Data untuk chart booking 7 hari terakhir
             $chartData = $this->getBookingChartData();
 
@@ -32,9 +33,8 @@ class AdminController extends Controller
                 'chartLabels' => $chartData['labels'],
                 'chartData' => $chartData['values']
             ]));
-
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memuat dashboard: '.$e->getMessage());
+            return back()->with('error', 'Gagal memuat dashboard: ' . $e->getMessage());
         }
     }
 
@@ -80,84 +80,85 @@ class AdminController extends Controller
     }
 
 
-public function showUsersRole2Pengusaha(Request $request)
-{
-    $search = $request->input('search', '');
+    public function showUsersRole2Pengusaha(Request $request)
+    {
+        $search = $request->input('search', '');
 
-    // Ambil data dari stored procedure
-    $usersRaw = DB::select('CALL getUsersByRole2()');
+        // Get users from stored procedure
+        $usersRaw = DB::select('CALL getUsersByRole2()');
 
-    // Filter manual jika ada search
-    if ($search) {
-        $searchLower = strtolower($search);
-        $usersRaw = array_filter($usersRaw, function ($user) use ($searchLower) {
-            return str_contains(strtolower($user->name ?? ''), $searchLower)
-                || str_contains(strtolower($user->username ?? ''), $searchLower)
-                || str_contains(strtolower($user->email ?? ''), $searchLower);
-        });
+        // Filter manually if search is provided
+        if ($search) {
+            $searchLower = strtolower($search);
+            $usersRaw = array_filter($usersRaw, function ($user) use ($searchLower) {
+                return str_contains(strtolower($user->name ?? ''), $searchLower)
+                    || str_contains(strtolower($user->username ?? ''), $searchLower)
+                    || str_contains(strtolower($user->email ?? ''), $searchLower);
+            });
+        }
+
+        // Convert to Collection
+        $usersCollection = collect($usersRaw);
+
+        // Manual pagination
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+        $currentPageItems = $usersCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedUsers = new LengthAwarePaginator(
+            $currentPageItems,
+            $usersCollection->count(),
+            $perPage,
+            $currentPage,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
+
+        // Return view with paginated data and search query
+        return view('admin.pengusaha', [
+            'users' => $paginatedUsers,
+            'search' => $search,
+        ]);
     }
 
-    // Convert ke Collection
-    $usersCollection = collect($usersRaw);
-
-    // Pagination manual
-    $currentPage = LengthAwarePaginator::resolveCurrentPage();
-    $perPage = 10;
-    $currentPageItems = $usersCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-    $paginatedUsers = new LengthAwarePaginator(
-        $currentPageItems,
-        $usersCollection->count(),
-        $perPage,
-        $currentPage,
-        ['path' => LengthAwarePaginator::resolveCurrentPath()]
-    );
-
-    // Return view dengan data paginated dan search
-    return view('admin.pengusaha', [
-        'users' => $paginatedUsers,
-        'search' => $search,
-    ]);
-}
 
 
-public function showUsersRole3Penyewa(Request $request)
-{
-    $search = $request->input('search', '');
+    public function showUsersRole3Penyewa(Request $request)
+    {
+        $search = $request->input('search', '');
 
-    $usersRaw = DB::select('CALL getUsersByRole3()');
+        $usersRaw = DB::select('CALL getUsersByRole3()');
 
-    // Filter manual jika ada search
-    if ($search) {
-        $searchLower = strtolower($search);
-        $usersRaw = array_filter($usersRaw, function ($user) use ($searchLower) {
-            return str_contains(strtolower($user->name ?? ''), $searchLower)
-                || str_contains(strtolower($user->username ?? ''), $searchLower)
-                || str_contains(strtolower($user->email ?? ''), $searchLower);
-        });
+        // Filter manual jika ada search
+        if ($search) {
+            $searchLower = strtolower($search);
+            $usersRaw = array_filter($usersRaw, function ($user) use ($searchLower) {
+                return str_contains(strtolower($user->name ?? ''), $searchLower)
+                    || str_contains(strtolower($user->username ?? ''), $searchLower)
+                    || str_contains(strtolower($user->email ?? ''), $searchLower);
+            });
+        }
+
+        // Convert ke Collection
+        $usersCollection = collect($usersRaw);
+
+        // Manual pagination
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+        $perPage = 10;
+        $currentPageItems = $usersCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedUsers = new LengthAwarePaginator(
+            $currentPageItems,
+            $usersCollection->count(),
+            $perPage,
+            $currentPage,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+        );
+
+        return view('admin.penyewa', [
+            'users' => $paginatedUsers,
+            'search' => $search,
+        ]);
     }
-
-    // Convert ke Collection
-    $usersCollection = collect($usersRaw);
-
-    // Manual pagination
-    $currentPage = LengthAwarePaginator::resolveCurrentPage();
-    $perPage = 10;
-    $currentPageItems = $usersCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-    $paginatedUsers = new LengthAwarePaginator(
-        $currentPageItems,
-        $usersCollection->count(),
-        $perPage,
-        $currentPage,
-        ['path' => LengthAwarePaginator::resolveCurrentPath()]
-    );
-
-    return view('admin.penyewa', [
-        'users' => $paginatedUsers,
-        'search' => $search,
-    ]);
-}
 
 
     /**
@@ -166,10 +167,10 @@ public function showUsersRole3Penyewa(Request $request)
     protected function getPaginatedUsers($procedure, $perPage = 10)
     {
         $usersArray = DB::select($procedure);
-        
+
         $page = request()->get('page', 1);
         $offset = ($page - 1) * $perPage;
-        
+
         return new LengthAwarePaginator(
             array_slice($usersArray, $offset, $perPage),
             count($usersArray),
@@ -187,125 +188,255 @@ public function showUsersRole3Penyewa(Request $request)
         try {
             $users = DB::select("CALL get_unconfirmed_pengusaha()");
             return response()->json(['success' => true, 'data' => $users]);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memuat data: '.$e->getMessage()
+                'message' => 'Gagal memuat data: ' . $e->getMessage()
             ], 500);
         }
     }
 
 
-public function confirmPengusaha(Request $request)
-{
-    try {
-        $request->validate(['user_id' => 'required|integer']);
+    public function confirmPengusaha(Request $request)
+    {
+        try {
+            $request->validate(['user_id' => 'required|integer']);
 
-        $result = DB::select("CALL confirm_pengusaha_account(?)", [$request->user_id]);
+            $result = DB::select("CALL confirm_pengusaha_account(?)", [$request->user_id]);
 
-        $affectedRows = $result[0]->affected_rows ?? 0;
+            $affectedRows = $result[0]->affected_rows ?? 0;
 
-        if ($affectedRows > 0) {
-            $user = User::find($request->user_id);
-            if ($user && $user->email) {
-                Mail::to($user->email)->send(new PengusahaConfirmed($user));
+            if ($affectedRows > 0) {
+                $user = User::find($request->user_id);
+                if ($user && $user->email) {
+                    Mail::to($user->email)->send(new PengusahaConfirmed($user));
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Akun berhasil dikonfirmasi dan email notifikasi sudah dikirim.'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada perubahan data (user tidak ditemukan atau sudah dikonfirmasi).'
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengkonfirmasi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDetailPengusaha(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        try {
+            $results = DB::select('CALL sp_get_pengusaha_detail(?)', [$request->user_id]);
+
+            if (empty($results)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun pengusaha tidak ditemukan.'
+                ], 404);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Akun berhasil dikonfirmasi dan email notifikasi sudah dikirim.'
+                'data' => $results[0]
             ]);
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Tidak ada perubahan data (user tidak ditemukan atau sudah dikonfirmasi).'
-        ], 400);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal mengkonfirmasi: ' . $e->getMessage()
-        ], 500);
-    }
-}
-
-public function getDetailPengusaha(Request $request)
-{
-    $request->validate([
-        'user_id' => 'required|exists:users,id,user_role_id,2'
-    ]);
-
-    try {
-        $results = DB::select(
-            'CALL sp_get_pengusaha_detail(?)', 
-            [$request->user_id]
-        );
-
-        if (empty($results)) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akun pengusaha tidak ditemukan.'
-            ], 404);
+                'message' => 'Terjadi kesalahan server',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Perbaiki metode ban_akun
+    public function ban_akun(Request $request)
+    {
+        $request->validate(['user_id' => 'required|exists:users,id']);
+
+        try {
+            $result = DB::select('CALL sp_ban_user(?)', [$request->user_id]);
+            $response = $result[0];
+
+            return response()->json([
+                'success' => (bool)$response->success,
+                'message' => $response->message,
+                'is_banned' => true
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memblokir akun: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Tambahkan metode unban_akun
+    public function unban_akun(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        try {
+            // Panggil stored procedure untuk membuka blokir pengguna
+            $result = DB::select('CALL sp_unban_user(?)', [$request->user_id]);
+
+            // Pastikan hasil sesuai format yang diharapkan
+            $response = $result[0];
+            return response()->json([
+                'success' => (bool)$response->success,
+                'message' => $response->message
+            ]);
+        } catch (\Exception $e) {
+            // Log error untuk debugging
+            \Log::error('Unban Akun Error: ' . $e->getMessage());
+
+            // Kirim respons JSON yang benar
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membuka blokir pengusaha.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function homestayProperty_admin(Request $request)
+    {
+        // Ambil kata kunci pencarian dari query string
+        $search = $request->input('search', '');
+
+        // Ambil daftar properti dengan pagination, termasuk pencarian berdasarkan nama properti
+        $properties = DB::table('properties')
+            ->where('property_type_id', 1)  // Hanya ambil properti dengan type homestay
+            ->where('name', 'like', '%' . $search . '%')  // Filter berdasarkan nama properti
+            ->paginate(10);  // Hasil per halaman 10
+
+        // Ambil daftar kota
+        $cities = DB::select('CALL sp_get_cities()');
+
+        // Tambahkan harga minimum dan nama kota ke masing-masing properti
+        foreach ($properties as $property) {
+            $result = DB::select("CALL get_MinRoomPriceByProperty(?)", [$property->id]);
+            $property->min_price = $result[0]->min_price ?? 0;
+            $property->city = $this->getCityNameByPropertyId($property->id); // Ambil nama kota
         }
 
-        $pengusaha = $results[0];
+        // Pass data ke view
+        return view('admin.homestay', compact('properties', 'cities', 'search'));
+    }
 
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $pengusaha->id,
-                'name' => $pengusaha->name,
-                'username' => $pengusaha->username,
-                'email' => $pengusaha->email,
-                'email_verified_at' => $pengusaha->email_verified_at,
-                'is_confirmed' => (bool)$pengusaha->is_confirmed,
-                'is_banned' => (bool)$pengusaha->is_banned,
-                'created_at' => $pengusaha->created_at,
-                'updated_at' => $pengusaha->updated_at
-            ]
+    private function getCityNameByPropertyId($propertyId)
+    {
+        // Query untuk mengambil nama kota berdasarkan relasi dengan subdistrict, district, dan city
+        $city = DB::select("
+        SELECT c.city_name
+        FROM cities c
+        INNER JOIN districts d ON c.id = d.city_id  -- Menghubungkan cities dan districts
+        INNER JOIN subdistricts s ON d.id = s.dist_id  -- Menghubungkan districts dan subdistricts
+        INNER JOIN properties p ON s.id = p.subdis_id  -- Menghubungkan subdistricts dan properties
+        WHERE p.id = ?", [$propertyId]);
+
+        // Kembalikan nama kota atau null jika tidak ditemukan
+        return $city ? $city[0]->city_name : null;
+    }
+
+    public function kostProperty_admin(Request $request)
+    {
+        // Ambil kata kunci pencarian dari query string
+        $search = $request->input('search', '');
+
+        // Ambil daftar properti dengan pagination, termasuk pencarian berdasarkan nama properti
+        $properties = DB::table('properties')
+            ->where('property_type_id', 2)  // Hanya ambil properti dengan type homestay
+            ->where('name', 'like', '%' . $search . '%')  // Filter berdasarkan nama properti
+            ->paginate(10);  // Hasil per halaman 10
+
+        // Ambil daftar kota
+        $cities = DB::select('CALL sp_get_cities()');
+
+        // Tambahkan harga minimum dan nama kota ke masing-masing properti
+        foreach ($properties as $property) {
+            $result = DB::select("CALL get_MinRoomPriceByProperty(?)", [$property->id]);
+            $property->min_price = $result[0]->min_price ?? 0;
+            $property->city = $this->getCityNameByPropertyId($property->id); // Ambil nama kota
+        }
+
+        // Pass data ke view
+        return view('admin.homestay', compact('properties', 'cities', 'search'));
+    }
+
+    public function index(): View
+    {
+        // Mengambil semua tipe property menggunakan stored procedure
+        $propertyTypes = DB::select('CALL GetPropertyTypes()');
+        return view('admin.tipe-property', compact('propertyTypes'));
+    }
+
+    public function store(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'property_type' => 'required|max:255',
+            'description' => 'nullable'
         ]);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Terjadi kesalahan saat mengambil data pengusaha.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-public function ban_akun(Request $request)
-{
-    // Validasi user_id
-    $request->validate([
-        'user_id' => 'required|exists:users,id'
-    ]);
-
-    try {
-        // Panggil stored procedure
-        $result = DB::select(
-            'CALL sp_ban_user(?)', 
-            [$request->user_id]
-        );
-
-        // Ambil hasil pertama dari stored procedure
-        $result = $result[0];
-
-        return response()->json([
-            'success' => (bool)$result->success,
-            'message' => $result->message
+        // Menyimpan data baru menggunakan stored procedure
+        DB::statement('CALL CreatePropertyType(?, ?)', [
+            $request->input('property_type'),
+            $request->input('description') ?? null,
         ]);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Terjadi kesalahan saat memblokir pengusaha.',
-            'error' => $e->getMessage()
-        ], 500);
+        return redirect()->route('admin.tipe_property.index')->with('success', 'Tipe property berhasil ditambahkan!');
     }
-}
+
+    public function edit($id)
+    {
+        // Mengambil data untuk edit berdasarkan ID
+        $type = DB::selectOne('CALL GetPropertyTypeById(?, @OUT_STATUS)', [$id]);
+
+        // Memeriksa apakah data ditemukan
+        if ($type) {
+            return response()->json($type);  // Mengembalikan data tipe properti dalam format JSON
+        } else {
+            return response()->json(['message' => 'Tipe properti tidak ditemukan'], 404);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        // Validasi input
+        $request->validate([
+            'property_type' => 'required|max:255',
+            'description' => 'nullable'
+        ]);
+
+        // Mengupdate data tipe properti menggunakan stored procedure
+        DB::statement('CALL UpdatePropertyType(?, ?, ?)', [
+            $id,
+            $request->input('property_type'),
+            $request->input('description') ?? null,
+        ]);
+
+        // Redirect kembali dengan pesan sukses
+        return redirect()->route('admin.tipe_property.index')->with('success', 'Tipe property berhasil diperbarui!');
+    }
 
 
+    public function destroy($id)
+    {
+        // Menghapus data tipe properti menggunakan stored procedure
+        DB::statement('CALL DeletePropertyType(?)', [$id]);
+        return redirect()->route('admin.tipe_property.index')->with('success', 'Tipe property berhasil dihapus!');
+    }
 }

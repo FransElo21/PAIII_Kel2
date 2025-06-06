@@ -269,28 +269,104 @@
 
 <div class="container">
   <!-- Categories Section -->
+  <div class="container">
+  <!-- Categories Section -->
   <section class="my-1 py-5 fade-in">
     <h4 class="fw-bold" style="color: #152C5B;">Hai, ada yang bisa dibantu ?</h4>
     <p>Anda bisa telusuri kategori informasi sesuai tipe akun berikut ini :</p>
     <div class="row g-4">
       <div class="col-12 col-md-6">
-        <div class="category-card text-center p-3">
+        <div class="category-card text-center p-3 shadow-sm rounded-4" role="button" data-bs-toggle="modal" data-bs-target="#modalOwner" style="transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
           <img src="assets/images/auth/owner.jpg" alt="Pemilik Kos"
               class="img-fluid rounded-4 mb-3"
               style="height: 250px; object-fit: cover; width: 100%;">
-          <h6>Pemilik Property</h6>
+          <h6 class="fw-bold">Pemilik Properti</h6>
         </div>
       </div>
       <div class="col-12 col-md-6">
-        <div class="category-card text-center p-3">
+        <div class="category-card text-center p-3 shadow-sm rounded-4" role="button" data-bs-toggle="modal" data-bs-target="#modalTenant" style="transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
           <img src="assets/images/auth/customer.jpg" alt="Penyewa Kos"
               class="img-fluid rounded-4 mb-3"
               style="height: 250px; object-fit: cover; width: 100%;">
-          <h6>Calon Penyewa</h6>
+          <h6 class="fw-bold">Calon Penyewa</h6>
         </div>
       </div>
     </div>
   </section>
+
+  <!-- Modal: Pemilik Properti -->
+<div class="modal fade" id="modalOwner" tabindex="-1" aria-labelledby="modalOwnerLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow-lg border-0">
+      <div class="modal-header bg-gradient-primary text-white rounded-top-4 d-flex align-items-center">
+        <i class="fas fa-building fa-3x me-3"></i>
+        <h5 class="modal-title fw-bold fs-3" id="modalOwnerLabel">Pemilik Properti</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body p-5">
+        <p class="fs-5 text-secondary mb-4">
+          Akun ini dirancang khusus untuk <strong>pemilik kos, homestay, rumah sewa, atau apartemen</strong> yang ingin memasarkan properti mereka melalui platform Hommie. 
+          Dengan akun ini, Anda memiliki kendali penuh atas informasi dan penawaran properti Anda. 
+          Platform kami memberikan kemudahan dalam mengelola data kamar, menetapkan harga, mengunggah foto, dan memantau pemesanan secara real-time.
+        </p>
+        <p class="fs-6 text-muted">
+          Manfaat menjadi pemilik properti di Hommie:
+        </p>
+        <ul class="list-unstyled ps-4 mb-4">
+          <li class="mb-2 d-flex align-items-center">
+            <i class="fas fa-check-circle text-success me-2 fs-5"></i>
+            Menjangkau ribuan calon penyewa dari berbagai kota
+          </li>
+          <li class="mb-2 d-flex align-items-center">
+            <i class="fas fa-check-circle text-success me-2 fs-5"></i>
+            Mengelola properti Anda dengan dashboard yang intuitif
+          </li>
+          <li class="mb-2 d-flex align-items-center">
+            <i class="fas fa-check-circle text-success me-2 fs-5"></i>
+            Menerima laporan pemesanan dan pembayaran otomatis
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Calon Penyewa -->
+<div class="modal fade" id="modalTenant" tabindex="-1" aria-labelledby="modalTenantLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content rounded-4 shadow-lg border-0">
+      <div class="modal-header bg-gradient-success text-white rounded-top-4 d-flex align-items-center">
+        <i class="fas fa-user-check fa-3x me-3"></i>
+        <h5 class="modal-title fw-bold fs-3" id="modalTenantLabel">Calon Penyewa</h5>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body p-5">
+        <p class="fs-5 text-secondary mb-4">
+            Akun ini ditujukan untuk Anda yang sedang mencari hunian sementara seperti <strong>kos harian, kos bulanan, homestay, atau tempat tinggal untuk liburan</strong>. 
+            Dengan akun penyewa, Anda bisa mencari properti yang sesuai dengan preferensi Anda, melakukan pemesanan langsung, serta memberikan ulasan setelah menginap.
+          </p>
+          <p class="fs-6 text-muted">
+            Keuntungan menjadi calon penyewa:
+          </p>
+          <ul class="list-unstyled ps-4 mb-4">
+            <li class="mb-2 d-flex align-items-center">
+              <i class="fas fa-search-location text-success me-2 fs-5"></i>
+              Mencari dan menyaring properti berdasarkan lokasi, harga, dan fasilitas
+            </li>
+            <li class="mb-2 d-flex align-items-center">
+              <i class="fas fa-calendar-check text-success me-2 fs-5"></i>
+              Melakukan pemesanan dan pembayaran secara aman & cepat
+            </li>
+            <li class="mb-2 d-flex align-items-center">
+              <i class="fas fa-comments text-success me-2 fs-5"></i>
+              Memberikan ulasan dan rating untuk membantu pengguna lain
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
   <!-- Properties Section -->
   <section class="my-1 py-1 fade-in">
     <h4 class="fw-bold mb-4" style="color: #152C5B;">Mau Cari Penginapan Apa?</h4>

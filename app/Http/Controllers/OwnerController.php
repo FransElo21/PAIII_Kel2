@@ -176,7 +176,7 @@ public function store_property(Request $request)
 {
     // Validasi request
     $validator = Validator::make($request->all(), [
-        'name'              => 'required|string',
+        'name' => 'required|string|unique:properties,name',
         'property_type_id'  => 'required|integer|exists:property_types,id',
         'subdis_id'         => 'required|integer|exists:subdistricts,id',
         'description'       => 'required|string',

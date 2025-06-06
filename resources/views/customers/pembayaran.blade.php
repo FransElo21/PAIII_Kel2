@@ -187,7 +187,6 @@
             @if($currentStep >= 3) active-line @endif"></div>
 
         {{-- STEP 3: Pembayaran --}}
-        {{-- STEP 3: Pembayaran --}}
         <div class="circle 
             @if($currentStep === 3) active 
             @elseif($currentStep > 3) done 
@@ -367,7 +366,7 @@
 
     // Tombol “Lanjutkan Pembayaran” langsung memanggil Midtrans snap.pay(...)
     document.getElementById('pay-button')?.addEventListener('click', function() {
-        if (! snapToken) {
+        if (!snapToken) {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',

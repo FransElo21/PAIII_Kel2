@@ -4,7 +4,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 @if(session('success') || session('error'))
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     @if(session('success'))
@@ -30,7 +29,6 @@
 </script>
 @endif
 
-
 @php
     function getInitials($name) {
         $words = explode(' ', $name);
@@ -42,7 +40,10 @@
         return $initials;
     }
     $initials = getInitials($data->name ?? '');
-    $avatarUrl = $data->photo_profil ? asset('storage/' . $data->photo_profil) : null;
+    // Cek agar tidak broken image jika file kosong atau hilang
+    $avatarUrl = ($data->photo_profil && file_exists(public_path('storage/' . $data->photo_profil)))
+        ? asset('storage/' . $data->photo_profil)
+        : null;
 @endphp
 
 <style>
@@ -95,6 +96,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 2.5rem; color: var(--white);
     background: var(--gray-dark);
+    overflow: hidden;
   }
   .profile-avatar-wrapper img {
     width: 100%; height: 100%; border-radius: 50%;
@@ -124,6 +126,14 @@
     font-weight: 600;
     background: var(--green);
     color: var(--white);
+    font-size: 2.4rem;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    letter-spacing: 1px;
   }
 </style>
 
@@ -147,11 +157,11 @@
     <section class="col-lg-9">
       <div class="card profile-card">
         <div class="profile-header">
-          <div class="profile-avatar-wrapper avatar-initials">
-            @if(!empty($avatarUrl))
-              <img src="{{url('storage/photo_profil/1749475447_6846e07731a98.jpg')}}" alt="Avatar">
+          <div class="profile-avatar-wrapper">
+            @if($avatarUrl)
+              <img src="{{ $avatarUrl }}" alt="Avatar" loading="lazy">
             @else
-              {{ $initials }}
+              <span class="avatar-initials">{{ $initials }}</span>
             @endif
           </div>
         </div>

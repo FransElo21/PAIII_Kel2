@@ -812,45 +812,41 @@ class UserController extends Controller
     {
         $user = Auth::user();
 
+        // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone_number_penyewa' => 'nullable|string|max:20',
             'address_penyewa' => 'nullable|string|max:255',
             'gender_penyewa' => 'nullable|string|max:25',
-            'photo_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'photo_profil' => 'nullable|image|max:2048',
         ]);
 
-        $photo = null;
+        // Ambil data lama penyewa
+        $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
 
+        $photoPath = $penyewa->photo_profil ?? null;
+
+        // Jika upload foto baru
         if ($request->hasFile('photo_profil')) {
-            // Cari data lama
-            $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
-            // Hapus foto lama jika ada
-            if ($penyewa && $penyewa->photo_profil && file_exists(public_path('storage/photo_profil/' . $penyewa->photo_profil))) {
-                unlink(public_path('storage/photo_profil/' . $penyewa->photo_profil));
+            $image = $request->file('photo_profil');
+
+            // Hapus foto lama (jika ada)
+            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
+                Storage::disk('public')->delete($photoPath);
             }
 
-            $file = $request->file('photo_profil');
-            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            // Generate nama file unik
+            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 
-            $destinationPath = public_path('storage/photo_profil');
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
-            }
-            $file->move($destinationPath, $filename);
+            // Simpan file di folder public/storage/penyewa
+            $image->storeAs('penyewa', $filename, 'public');
 
-            // Simpan hanya nama file
-            $photo = $filename;
-        } else {
-            // Tetap gunakan foto lama jika tidak upload baru
-            $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
-            if ($penyewa) {
-                $photo = $penyewa->photo_profil;
-            }
+            // Path relatif yang akan disimpan ke database
+            $photoPath = 'penyewa/' . $filename;
         }
 
-        // Jalankan Stored Procedure
+        // Jalankan Stored Procedure untuk update data
         DB::statement('CALL upsert_profile_penyewa(?, ?, ?, ?, ?, ?, ?)', [
             $user->id,
             $request->name,
@@ -858,7 +854,7 @@ class UserController extends Controller
             $request->phone_number_penyewa,
             $request->address_penyewa,
             $request->gender_penyewa,
-            $photo // hanya nama file saja, pathnya diatur di view
+            $photoPath // null jika tidak upload foto baru
         ]);
 
         return redirect()->route('profileuser.show')->with('success', 'Profil berhasil diperbarui.');

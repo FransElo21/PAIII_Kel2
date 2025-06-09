@@ -42,9 +42,7 @@
         return $initials;
     }
     $initials = getInitials($data->name ?? '');
-    $avatarUrl = $data->photo_profil
-        ? asset('storage/' . $data->photo_profil)
-        : null;
+    $avatarUrl = $data->photo_profil ? asset('storage/' . $data->photo_profil) : null;
 @endphp
 
 <style>

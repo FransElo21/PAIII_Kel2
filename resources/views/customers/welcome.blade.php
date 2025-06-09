@@ -276,7 +276,7 @@
       <section class="hero-section" style="background-image: url('/assets/images/auth/Pemandangan_Gunung_Bromo.jpg');">
         <div class="hero-overlay"></div>
         <div class="container d-flex flex-column justify-content-center align-items-center">
-          <h1 class="fw-bold text-white">Hai kamu benyamin, <span class="text-highlight">Mau Cari Penginapan?</span></h1>
+          <h1 class="fw-bold text-white">Hai kamu, <span class="text-highlight">Mau Cari Penginapan?</span></h1>
           <p class="lead text-white fw-semibold mt-3">Hommie – Platform terbaik buat cari kost & homestay harian!</p>
           <form action="{{ route('search_welcomeProperty') }}" method="GET" class="search-input-group mt-4">
             <div class="input-group input-group-lg">

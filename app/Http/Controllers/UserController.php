@@ -840,21 +840,27 @@ class UserController extends Controller
 
         // Jika upload foto baru
         if ($request->hasFile('photo_profil')) {
-            $image = $request->file('photo_profil');
+            $file = $request->file('photo_profil');
 
             // Hapus foto lama (jika ada)
-            if ($photoPath && Storage::disk('public')->exists($photoPath)) {
-                Storage::disk('public')->delete($photoPath);
+            if ($photoPath && file_exists(public_path('storage/' . $photoPath))) {
+                @unlink(public_path('storage/' . $photoPath));
             }
 
             // Generate nama file unik
-            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $path = time() . '_' . preg_replace('/\s+/', '', $request->name) . '.' . $file->getClientOriginalExtension();
 
-            // Simpan file di folder storage/app/public/penyewa
-            $image->storeAs('penyewa', $filename, 'public');
+            // Pastikan folder penyewa sudah ada
+            $destination = public_path('storage/penyewa/');
+            if (!file_exists($destination)) {
+                mkdir($destination, 0777, true);
+            }
 
-            // Path relatif yang akan disimpan ke database
-            $photoPath = 'penyewa/' . $filename;
+            // Simpan file ke public/storage/penyewa
+            $file->move($destination, $path);
+
+            // Path relatif untuk simpan ke database
+            $photoPath = 'penyewa/' . $path;
         }
 
         // Jalankan Stored Procedure untuk update data

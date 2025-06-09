@@ -149,7 +149,7 @@
         <div class="profile-header">
           <div class="profile-avatar-wrapper avatar-initials">
             @if(!empty($avatarUrl))
-              <img src="{{ $avatarUrl }}" alt="Avatar">
+              <img src="{{url('storage/photo_profil/1749475447_6846e07731a98.jpg')}}" alt="Avatar">
             @else
               {{ $initials }}
             @endif

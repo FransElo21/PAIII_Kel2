@@ -170,16 +170,33 @@ class PaymentController extends Controller
     //     return response()->json(['status' => 'ok']);
     // }
 
-    public function cetakResi($bookingId)
+    public function downloadResi($booking_id)
     {
-        $bookingDetails = DB::select('CALL get_BookingDetails(?)', [$bookingId]);
-        if (empty($bookingDetails)) {
-            abort(404);
+        // Ambil data booking + rooms via SP (semua data 1x query)
+        $bookingData = DB::select('CALL sp_get_booking_full_info(?)', [$booking_id]);
+        if (empty($bookingData)) {
+            abort(404, "Data booking tidak ditemukan.");
         }
 
-        $booking = $bookingDetails[0];
+        // Ambil info utama booking dari baris pertama
+        $booking = $bookingData[0];
 
-        $pdf = Pdf::loadView('pdf.resi', compact('booking'));
-        return $pdf->download('resi_booking_' . $bookingId . '.pdf');
+        // Ambil semua kamar yang dipesan (biasanya lebih dari satu row per booking jika >1 kamar)
+        $rooms = collect($bookingData)->map(function ($item) {
+            return (object)[
+                'room_type'      => $item->room_type,
+                'quantity'       => $item->quantity,
+                'price_per_room' => $item->price_per_room,
+                'subtotal'       => $item->subtotal,
+            ];
+        });
+
+        // Kirim ke view PDF (pakai dompdf/barryvdh)
+        $pdf = PDF::loadView('payments.resiPdf', [
+            'booking' => $booking,
+            'rooms'   => $rooms
+        ]);
+        $fileName = 'Resi-' . $booking_id . '.pdf';
+        return $pdf->download($fileName);
     }
 }

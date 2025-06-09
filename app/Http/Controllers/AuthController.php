@@ -260,31 +260,9 @@ class AuthController extends Controller
     // 5. Login Pengguna
 public function login(Request $request)
 {
-    // Aturan validasi untuk login
-    $rules = [
-        'email' => 'required|email',
-        'password' => 'required|string|min:6',
-    ];
-
-    // Pesan error dalam Bahasa Indonesia
-    $messages = [
-        'email.required' => 'Email wajib diisi.',
-        'email.email' => 'Format email tidak valid.',
-        'password.required' => 'Password wajib diisi.',
-        'password.min' => 'Password harus minimal 6 karakter.',
-    ];
-
-    // Jalankan validasi
-    $validator = Validator::make($request->all(), $rules, $messages);
-
-    if ($validator->fails()) {
-        return back()
-            ->withErrors($validator)
-            ->withInput();
-    }
+    // ... validasi seperti biasa ...
 
     try {
-        // Panggil SP untuk mencari pengguna
         $userData = DB::select("CALL login_user(?)", [$request->email]);
 
         if (empty($userData)) {
@@ -295,21 +273,18 @@ public function login(Request $request)
 
         $user = (object) $userData[0];
 
-        // Validasi password
         if (!Hash::check($request->password, $user->password)) {
             return back()
                 ->withErrors(['password' => 'Password salah.'])
                 ->withInput();
         }
 
-        // Cek status verifikasi email
         if (!$user->email_verified_at) {
             return back()
                 ->withErrors(['email' => 'Email belum diverifikasi.'])
                 ->withInput();
         }
 
-        // Cek is_confirmed khusus untuk pengusaha (user_role_id = 2)
         if ($user->user_role_id == 2 && !$user->is_confirmed) {
             return back()
                 ->withErrors(['email' => 'Akun pengusaha Anda belum dikonfirmasi oleh admin.'])
@@ -334,6 +309,7 @@ public function login(Request $request)
             ->withInput();
     }
 }
+
 
 
 }

@@ -254,17 +254,19 @@
                 </div>
                 <hr>
                 <!-- Facilities -->
-                <div class=" fade-in">
+                <div class="fade-in">
                     <h4 class="fw-bold mb-3">Fasilitas Umum</h4>
                     @if(!empty($fasilitas))
-                        <ul class="list-unstyled">
-                            @foreach($fasilitas as $f)
-                            <li class="d-flex align-items-center mb-2 fs-6">
-                                <i class="bi {{ $f->icon }} me-2" style="font-size: 1.5rem;"></i>
-                                <span>{{ $f->facility_name }}</span>
-                            </li>
+                        <div class="row">
+                            @foreach($fasilitas as $i => $f)
+                                <div class="col-12 col-md-3 mb-3">
+                                    <div class="d-flex align-items-center fs-6">
+                                        <i class="bi bi-{{ $f->icon }} me-2" style="font-size: 1.5rem;"></i>
+                                        <span>{{ $f->facility_name }}</span>
+                                    </div>
+                                </div>
                             @endforeach
-                        </ul>
+                        </div>
                     @else
                         <p class="text-muted">Fasilitas belum tersedia</p>
                     @endif

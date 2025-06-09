@@ -70,7 +70,7 @@ class ReviewController extends Controller
 
         return redirect()->route('riwayat-transaksi.index')->with('success', 'Terima kasih atas ulasannya!');
     }
-    
+
     public function index()
     {
         $ownerId = Auth::id();
@@ -79,5 +79,24 @@ class ReviewController extends Controller
         $reviews = DB::select('CALL sp_get_owner_reviews(?)', [$ownerId]);
 
         return view('owner.ulasan', compact('reviews'));
+    }
+
+    public function report(Request $request)
+    {
+        $request->validate([
+            'review_id' => 'required|exists:reviews,id',
+            'report_reason' => 'required|string|min:5'
+        ]);
+
+        try {
+            DB::statement('CALL sp_report_review(?, ?, ?)', [
+                $request->review_id,
+                $request->report_reason,
+                now()
+            ]);
+            return back()->with('success', 'Review berhasil dilaporkan ke admin. Tunggu tindak lanjut.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal melaporkan review: ' . $e->getMessage());
+        }
     }
 }

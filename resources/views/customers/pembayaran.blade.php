@@ -2,163 +2,65 @@
 
 @section('content')
 @php
-    // STEP 3: Pembayaran (3-langkah: Isi Data Diri → Konfirmasi → Pembayaran)
     $currentStep = 3;
-
-    // Pastikan variabel $booking, $rooms, dan $snapToken sudah dikirim dari controller.
     $bookingId = $booking->booking_id;
     $statusClass = str_replace(' ', '-', $booking->status);
 @endphp
 
-<!-- Sertakan SweetAlert2 & Bootstrap Icons via CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css">
 
 <style>
-    body {
-        background: #f6fafc;
-    }
-    /* Stepper (3 Langkah: Isi Data Diri → Konfirmasi → Pembayaran) */
-    .stepper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 1.8rem;
-    }
-    .circle {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: #fff;
-        border: 2.5px solid #289A84;
-        color: #289A84;
-        font-weight: bold;
-        font-size: 1.17rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(40,154,132,0.05);
-        transition: background .2s, color .2s, border-color .2s;
-    }
-    .circle.active,
-    .circle.done {
-        background: #289A84;
-        color: #fff;
-        border-color: #289A84;
-    }
-    .line {
-        flex: 1;
-        height: 5px;
-        background: #d0ebe0;
-        border-radius: 12px;
-        transition: background .19s;
-    }
-    .line.active-line {
-        background: #289A84;
-    }
+    body { background: #f6fafc; }
 
-    .payment-card {
+    /* Total di dalam card (Shopee style) */
+    .in-card-total {
+        background: linear-gradient(87deg, #f8fbfa 50%, #e6f6f2 100%);
         border-radius: 1.4rem;
-        box-shadow: 0 8px 40px rgba(40, 154, 132, 0.07);
-        border: none;
-        background: #fff;
-        transition: box-shadow .18s, transform .16s;
-    }
-    .payment-card:hover {
-        box-shadow: 0 12px 54px rgba(40,154,132,0.13);
-        transform: translateY(-2px) scale(1.01);
-    }
-
-    .status-badge {
-        padding: 0.47em 1.2em;
-        border-radius: 16px;
-        font-size: 1rem;
-        font-weight: 600;
-        letter-spacing: .03em;
-    }
-    .status-badge.Belum-Dibayar {
-        background: #fff9e7;
-        color:    #d99400;
-        border:   1px solid #ffd684;
-    }
-    .status-badge.Berhasil {
-        background: #eaf7f2;
-        color:      #27ae60;
-        border:     1px solid #8bd9b3;
-    }
-    .status-badge.Selesai {
-        background: #e3f2fd;
-        color:      #1976d2;
-        border:     1px solid #90caf9;
-    }
-    .status-badge.Dibatalkan {
-        background: #fdecea;
-        color:      #d32f2f;
-        border:     1px solid #f99a9a;
-    }
-    .status-badge.Kadaluarsa {
-        background: #f5f5f5;
-        color:      #616161;
-        border:     1px solid #e0e0e0;
-    }
-
-    .section-card {
-        border-radius: 1rem;
-        box-shadow: 0 2px 16px rgba(44,62,80,0.07);
-        margin-bottom: 1.2rem;
-        border: none;
-        background: #f7fafc;
-    }
-    .section-card .card-header {
-        background: #f8fbfa !important;
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-    .alert-soft {
-        background: #f4f9f6;
-        color: #289A84;
-        border: none;
-    }
-    .btn-custom-pay {
-        background: linear-gradient(92deg, #36b37e 0%, #289A84 100%);
-        color: #fff;
-        border-radius: 36px;
-        font-weight: 700;
-        font-size: 1.15rem;
-        letter-spacing: .01em;
-        transition: box-shadow .18s, background .22s, transform .18s;
-        box-shadow: 0 4px 22px rgba(40, 154, 132, 0.13);
-        padding: 10px 2.5rem;
-    }
-    .btn-custom-pay:hover {
-        background: linear-gradient(92deg, #289A84 0%, #36b37e 100%);
-        transform: translateY(-2px) scale(1.04);
-    }
-    /* Breadcrumb */
-    .breadcrumb {
-        border-radius: 0.5rem;
+        box-shadow: 0 3px 18px rgba(44,150,120,0.08);
+        padding: 1.2rem 1.7rem 1rem 1.7rem;
         margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
-    .breadcrumb-item + .breadcrumb-item::before {
-        content: "›";
-        color: #94a3b8;
+    .in-card-total .label {
+        font-size: 1.11rem;
+        color: #49505a;
+        font-weight: 500;
+        letter-spacing: .01em;
     }
-    .breadcrumb-item a {
-        color: #64748b;
-        transition: color 0.3s ease;
+    .in-card-total .value {
+        color: #e53935;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: .02em;
+        text-shadow: 0 2px 12px rgba(229,57,53,0.07);
     }
-    .breadcrumb-item a:hover {
-        color: #289A84;
-    }
-    .breadcrumb-item.active {
-        color: #289A84;
-        font-weight: 600;
-    }
+    .status-badge.Belum-Dibayar { background: #fff9e7; color: #d99400; border: 1px solid #ffd684; }
+    .status-badge.Berhasil { background: #eaf7f2; color: #27ae60; border: 1px solid #8bd9b3;}
+    .status-badge.Selesai { background: #e3f2fd; color: #1976d2; border: 1px solid #90caf9;}
+    .status-badge.Dibatalkan { background: #fdecea; color: #d32f2f; border: 1px solid #f99a9a;}
+    .status-badge.Kadaluarsa { background: #f5f5f5; color: #616161; border: 1px solid #e0e0e0;}
+    .stepper { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1.8rem;}
+    .circle { width: 42px; height: 42px; border-radius: 50%; background: #fff; border: 2.5px solid #289A84; color: #289A84; font-weight: bold; font-size: 1.17rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(40,154,132,0.05);}
+    .circle.active, .circle.done { background: #289A84; color: #fff; border-color: #289A84;}
+    .line { flex: 1; height: 5px; background: #d0ebe0; border-radius: 12px;}
+    .line.active-line { background: #289A84;}
+    .payment-card { border-radius: 1.4rem; box-shadow: 0 8px 40px rgba(40, 154, 132, 0.07); border: none; background: #fff;}
+    .payment-card:hover { box-shadow: 0 12px 54px rgba(40,154,132,0.13); transform: translateY(-2px) scale(1.01);}
+    .section-card { border-radius: 1rem; box-shadow: 0 2px 16px rgba(44,62,80,0.07); margin-bottom: 1.2rem; border: none; background: #f7fafc;}
+    .section-card .card-header { background: #f8fbfa !important; border-bottom: none; padding-bottom: 0;}
+    .btn-custom-pay { background: linear-gradient(92deg, #36b37e 0%, #289A84 100%); color: #fff; border-radius: 36px; font-weight: 700; font-size: 1.15rem; letter-spacing: .01em; box-shadow: 0 4px 22px rgba(40, 154, 132, 0.13); padding: 10px 2.5rem;}
+    .btn-custom-pay:hover { background: linear-gradient(92deg, #289A84 0%, #36b37e 100%); transform: translateY(-2px) scale(1.04);}
+    .breadcrumb { border-radius: 0.5rem; margin-bottom: 1.5rem;}
+    .breadcrumb-item + .breadcrumb-item::before { content: "›"; color: #94a3b8;}
+    .breadcrumb-item a { color: #64748b; }
+    .breadcrumb-item a:hover { color: #289A84;}
+    .breadcrumb-item.active { color: #289A84; font-weight: 600;}
 </style>
 
 <div class="container">
-    <!-- Breadcrumb -->
     <ol class="breadcrumb pt-3 mb-4">
         <li class="breadcrumb-item"><a href="#">Property</a></li>
         <li class="breadcrumb-item"><a href="#">{{ $booking->property_name }}</a></li>
@@ -168,44 +70,23 @@
 
     <!-- Stepper -->
     <div class="stepper">
-        {{-- STEP 1: Isi Data Diri --}}
-        <div class="circle 
-            @if($currentStep >= 1) done @endif 
-            @if($currentStep === 1) active @endif">
+        <div class="circle @if($currentStep >= 1) done @endif @if($currentStep === 1) active @endif">
             <i class="bi bi-person-fill"></i>
         </div>
-        <div class="line 
-            @if($currentStep >= 2) active-line @endif"></div>
-
-        {{-- STEP 2: Konfirmasi Pemesanan --}}
-        <div class="circle 
-            @if($currentStep > 2) done @endif 
-            @if($currentStep === 2) active @endif">
+        <div class="line @if($currentStep >= 2) active-line @endif"></div>
+        <div class="circle @if($currentStep > 2) done @endif @if($currentStep === 2) active @endif">
             <i class="bi bi-envelope-check-fill"></i>
         </div>
-        <div class="line 
-            @if($currentStep >= 3) active-line @endif"></div>
-
-        {{-- STEP 3: Pembayaran --}}
-        <div class="circle 
-            @if($currentStep === 3) active 
-            @elseif($currentStep > 3) done 
-            @endif">
+        <div class="line @if($currentStep >= 3) active-line @endif"></div>
+        <div class="circle @if($currentStep === 3) active @elseif($currentStep > 3) done @endif">
             <i class="bi bi-cash-coin"></i>
         </div>
-        <div class="line 
-            @if($currentStep >= 4) active-line @endif"></div>
-
-        {{-- STEP 4: Sukses --}}
-        <div class="circle 
-            @if($currentStep === 4) active 
-            @elseif($currentStep > 4) done 
-            @endif">
+        <div class="line @if($currentStep >= 4) active-line @endif"></div>
+        <div class="circle @if($currentStep === 4) active @elseif($currentStep > 4) done @endif">
             <i class="bi bi-check-circle-fill"></i>
         </div>
     </div>
 
-    {{-- Tampilkan SweetAlert jika ada pesan session --}}
     @if(session('success'))
         <script>
             Swal.fire({
@@ -216,7 +97,6 @@
             });
         </script>
     @endif
-
     @if(session('error'))
         <script>
             Swal.fire({
@@ -232,11 +112,17 @@
         <div class="col-lg-8 col-md-10">
             <div class="card payment-card">
                 <div class="card-body p-4">
+
+                    <!-- Total harga di dalam card, di atas -->
                     <h4 class="fw-bold mb-4 text-center" style="color:#289A84;">
                         <i class="bi bi-cash-coin me-1"></i> Pembayaran
                     </h4>
+                    
+                    <div class="in-card-total mb-4">
+                        <span class="label">Total Pembayaran</span>
+                        <span class="value">Rp{{ number_format($booking->total_price,0,',','.') }}</span>
+                    </div>
 
-                    <!-- Booking Summary -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <span class="text-muted small">Booking ID</span>
@@ -247,7 +133,6 @@
                         </span>
                     </div>
 
-                    <!-- Property Information -->
                     <div class="card section-card mb-4">
                         <div class="card-header">
                             <h5 class="fw-bold mb-0">Properti</h5>
@@ -271,7 +156,6 @@
                         </div>
                     </div>
 
-                    <!-- Guest Information -->
                     <div class="card section-card mb-4">
                         <div class="card-header">
                             <h5 class="fw-bold mb-0">Pemesan</h5>
@@ -294,7 +178,6 @@
                         </div>
                     </div>
 
-                    <!-- Room Details -->
                     @if(!empty($rooms))
                     <div class="card section-card mb-4">
                         <div class="card-header">
@@ -321,29 +204,14 @@
                     </div>
                     @endif
 
-                    <!-- Payment Summary -->
-                    <div class="alert alert-soft d-flex justify-content-between align-items-center p-3 rounded-3 mb-4">
-                        <div><strong>Total Bayar</strong></div>
-                        <span class="h4 fw-bold text-danger mb-0">
-                            Rp{{ number_format($booking->total_price,0,',','.') }}
-                        </span>
-                    </div>
-
-                    <!-- Payment Button: hanya muncul jika status 'Belum Dibayar' -->
                     @if($booking->status === 'Belum Dibayar')
                         <div class="text-center mt-4">
-                            <!-- Ketika diklik, panggil Midtrans Snap dengan token yang dikirim oleh controller -->
-                            <button id="pay-button"
-                                    type="button"
-                                    class="btn btn-custom-pay btn-lg w-100">
+                            <button id="pay-button" type="button" class="btn btn-custom-pay btn-lg w-100">
                                 <i class="bi bi-credit-card me-2"></i> Lanjutkan Pembayaran
                             </button>
                         </div>
-
                         <div class="d-grid gap-2 mt-3">
-                            <button id="cancel-button"
-                                    type="button"
-                                    class="btn btn-outline-danger btn-lg w-100">
+                            <button id="cancel-button" type="button" class="btn btn-outline-danger btn-lg w-100">
                                 <i class="bi bi-x-circle me-2"></i> Batalkan Pesanan
                             </button>
                         </div>
@@ -361,10 +229,7 @@
 </div>
 
 <script>
-    // Dapatkan snapToken yang dikirim dari controller lewat query param
     const snapToken = '{{ request()->query("snap_token", "") }}';
-
-    // Tombol “Lanjutkan Pembayaran” langsung memanggil Midtrans snap.pay(...)
     document.getElementById('pay-button')?.addEventListener('click', function() {
         if (!snapToken) {
             Swal.fire({
@@ -375,15 +240,11 @@
             });
             return;
         }
-
-        // Panggil Midtrans Snap popup
         snap.pay(snapToken, {
             onSuccess: function(result) {
                 window.location.href = "{{ route('payment.success', ['booking_id' => $bookingId]) }}";
             },
-            onPending: function(result) {
-                console.log('PENDING', result);
-            },
+            onPending: function(result) { console.log('PENDING', result); },
             onError: function(result) {
                 Swal.fire({
                     icon: 'error',
@@ -396,7 +257,6 @@
         });
     });
 
-    // Tombol “Batalkan Pesanan” menggunakan SweetAlert2 + AJAX
     document.getElementById('cancel-button')?.addEventListener('click', function() {
         Swal.fire({
             title: 'Batalkan Pesanan?',
@@ -416,19 +276,14 @@
                         'Accept': 'application/json'
                     }
                 })
-                .then(res => {
-                    if (! res.ok) throw new Error('Network response was not ok');
-                    return res.json().catch(() => null);
-                })
+                .then(res => { if (! res.ok) throw new Error('Network response was not ok'); return res.json().catch(() => null); })
                 .then(data => {
                     Swal.fire({
                         icon: 'success',
                         title: 'Dibatalkan',
                         text: 'Pesanan Anda berhasil dibatalkan.',
                         confirmButtonColor: '#289A84'
-                    }).then(() => {
-                        window.location.reload();
-                    });
+                    }).then(() => { window.location.reload(); });
                 })
                 .catch(err => {
                     Swal.fire({
@@ -443,9 +298,6 @@
         });
     });
 </script>
-
-{{-- Sertakan Midtrans Snap.js --}}
 <script src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key="{{ config('services.midtrans.clientKey') }}"></script>
-
 @endsection

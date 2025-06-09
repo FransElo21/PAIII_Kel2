@@ -106,6 +106,13 @@
                 @enderror
               </div>
 
+              <!-- Forgot Password Link -->
+              <div class="col-12">
+                <div class="text-end">
+                  <a href="{{ route('password.forgot') }}">Lupa Password?</a>
+                </div>
+              </div>
+
               <!-- Tombol Submit -->
               <div class="col-12">
                 <div class="d-grid">

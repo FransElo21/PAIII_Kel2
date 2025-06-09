@@ -31,7 +31,7 @@
         @endif
     </script>
 
-    <div class="container py-4">
+    <div class="container ">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3>Daftar Fasilitas</h3>
             <button type="button" class="btn btn-primary px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#addFacilityModal">

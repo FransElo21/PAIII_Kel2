@@ -339,7 +339,7 @@
         </div>
       </a>
       <hr class="dropdown-divider">
-      <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('profileuser.show') }}">
+      <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('profileowner.show') }}">
         <i class="material-icons-outlined">person_outline</i> Profile
       </a>
       <hr class="dropdown-divider">
@@ -402,7 +402,7 @@
               </a>
           </li>
           <li>
-            <a href="user-profile.html">
+            <a href="{{ route('profileowner.show') }}">
               <div class="parent-icon"><i class="material-icons-outlined">person</i>
               </div>
               <div class="menu-title">User Profile</div>

@@ -9,17 +9,16 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
-    /**
-     * Menampilkan dashboard admin dengan statistik dan data booking
-     */
+
     public function showAdminpage()
     {
         try {
-            // Data statistik utama
+            // Data statistik utama (sudah termasuk total penyewa)
             $stats = $this->getDashboardStats();
 
             // Data booking terbaru untuk tabel
@@ -28,25 +27,78 @@ class AdminController extends Controller
             // Data untuk chart booking 7 hari terakhir
             $chartData = $this->getBookingChartData();
 
+            $propertyTypeStats = $this->getPropertyTypeStats();
+
+            $popularProperties = DB::table('bookings')
+                ->select(
+                    'properties.id',
+                    'properties.name',
+                    DB::raw('COUNT(bookings.id) as total_booking'),
+                    DB::raw('MIN(property_images.images_path) as images_path') // ambil satu gambar, bisa diganti MAX, atau LEFT JOIN LIMIT 1
+                )
+                ->join('properties', 'bookings.property_id', '=', 'properties.id')
+                ->leftJoin('property_images', function($join) {
+                    $join->on('properties.id', '=', 'property_images.property_id')
+                        ->where('property_images.is_deleted', 0);
+                })
+                ->groupBy('properties.id', 'properties.name')
+                ->orderByDesc('total_booking')
+                ->limit(5)
+                ->get();
+
+            // Top Vendors (pengusaha dengan properti terbooking terbanyak)
+            $topVendors = DB::table('bookings')
+                ->select('users.id', 'users.name', DB::raw('COUNT(bookings.id) as total_booking'))
+                ->join('properties', 'bookings.property_id', '=', 'properties.id')
+                ->join('users', 'properties.user_id', '=', 'users.id')
+                ->where('users.user_role_id', 2)
+                ->groupBy('users.id', 'users.name')
+                ->orderByDesc('total_booking')
+                ->limit(5)
+                ->get();
+
+
             return view('admin.dashboard-admin', array_merge($stats, [
-                'bookings' => $bookings,
+                'bookings'    => $bookings,
                 'chartLabels' => $chartData['labels'],
-                'chartData' => $chartData['values']
+                'chartData'   => $chartData['values'],
+                'propertyTypeStats' => $propertyTypeStats,
+                'popularProperties' => $popularProperties,
+                'topVendors' => $topVendors,
             ]));
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal memuat dashboard: ' . $e->getMessage());
         }
     }
 
+    protected function getPropertyTypeStats()
+    {
+        $types = DB::table('properties')
+            ->select('property_type_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('property_type_id')
+            ->pluck('total', 'property_type_id')
+            ->toArray();
+
+        // Pastikan id = 1 = Homestay, id = 2 = Kost, urutan dan default 0 jika tidak ada
+        return [
+            'homestay' => $types[1] ?? 0,
+            'kost'     => $types[2] ?? 0,
+        ];
+    }
+
     /**
-     * Mengambil data statistik dashboard
+     * Mengambil data statistik dashboard (termasuk total penyewa)
      */
     protected function getDashboardStats()
     {
         return [
             'totalPengusaha' => optional(DB::select('CALL getTotalPengusaha()')[0])->total ?? 0,
-            'totalProperty' => optional(DB::select('CALL getTotalProperty()')[0])->total ?? 0,
-            'totalBooking' => optional(DB::select('CALL getTotalBooking()')[0])->total ?? 0,
+            'totalProperty'  => optional(DB::select('CALL getTotalProperty()')[0])->total ?? 0,
+            'totalBooking'   => optional(DB::select('CALL getTotalBooking()')[0])->total ?? 0,
+            // Tambahkan statistik total penyewa di bawah ini
+            'totalPenyewa' => optional(DB::select("SELECT COUNT(*) as total FROM users WHERE user_role_id = 3")[0])->total ?? 0,
+            // Jika kamu ingin pakai stored procedure:
+            // 'totalPenyewa' => optional(DB::select('CALL getTotalPenyewa()')[0])->total ?? 0,
         ];
     }
 
@@ -56,7 +108,7 @@ class AdminController extends Controller
     protected function getBookingChartData()
     {
         $startDate = Carbon::now()->subDays(6)->startOfDay();
-        $endDate = Carbon::now()->endOfDay();
+        $endDate   = Carbon::now()->endOfDay();
 
         $bookingData = DB::table('bookings')
             ->select(DB::raw('DATE(check_in) as date'), DB::raw('COUNT(*) as total'))
@@ -78,6 +130,7 @@ class AdminController extends Controller
             'values' => array_values($dates)
         ];
     }
+
 
 
     public function showUsersRole2Pengusaha(Request $request)
@@ -259,6 +312,35 @@ class AdminController extends Controller
         }
     }
 
+    public function getDetailPenyewa(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id'
+        ]);
+
+        try {
+            $results = DB::select('CALL sp_get_penyewa_detail(?)', [$request->user_id]);
+
+            if (empty($results)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun penyewa tidak ditemukan.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $results[0]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan server',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // Perbaiki metode ban_akun
     public function ban_akun(Request $request)
     {
@@ -305,7 +387,7 @@ class AdminController extends Controller
             // Kirim respons JSON yang benar
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat membuka blokir pengusaha.',
+                'message' => 'Terjadi kesalahan saat membuka blokir Akun.',
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -438,5 +520,157 @@ class AdminController extends Controller
         // Menghapus data tipe properti menggunakan stored procedure
         DB::statement('CALL DeletePropertyType(?)', [$id]);
         return redirect()->route('admin.tipe_property.index')->with('success', 'Tipe property berhasil dihapus!');
+    }
+
+    // Method lama yang mengembalikan view full-page
+    public function showDetailProperty($id)
+    {
+        $propertyResult = DB::select('CALL view_propertyById(?)', [$id]);
+        if (empty($propertyResult)) {
+            abort(404, 'Properti tidak ditemukan');
+        }
+        $property = $propertyResult[0];
+        $locationData = optional(DB::select('CALL get_fullLocation(?)', [$property->subdis_id]))[0] ?? null;
+        $images    = DB::select('CALL get_propertyImagesByProperty(?)', [$id]);
+        $fasilitas = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$id]);
+        $rooms     = DB::select('CALL get_RoomsByPropertyId(?)', [$id]);
+        $property_roomPrice = DB::select('CALL get_MinRoomPriceByProperty(?)', [$id]);
+        $reviews   = DB::select('CALL get_PropertyReviews(?)', [$id]);
+        $ratingData    = DB::select('CALL get_AverageRating(?)', [$id]);
+        $avgRating     = $ratingData[0]->avg_rating ?? 0;
+        $totalReviews  = $ratingData[0]->total_reviews ?? 0;
+
+        return view('admin/detail-homestay', compact(
+            'property',
+            'images',
+            'locationData',
+            'rooms',
+            'property_roomPrice',
+            'fasilitas',
+            'reviews',
+            'avgRating',
+            'totalReviews'
+        ));
+    }
+
+    // Method baru untuk AJAX (mengembalikan JSON)
+    public function detailAjax($id)
+    {
+        $propertyResult = DB::select('CALL view_propertyById(?)', [$id]);
+        if (empty($propertyResult)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Properti tidak ditemukan'
+            ], 404);
+        }
+        $property        = $propertyResult[0];
+        $locationData    = optional(DB::select('CALL get_fullLocation(?)', [$property->subdis_id]))[0] ?? null;
+        $images          = DB::select('CALL get_propertyImagesByProperty(?)', [$id]);
+        $fasilitas       = DB::select('CALL get_propertyFacilitiesByProperty(?)', [$id]);
+        $rooms           = DB::select('CALL get_RoomsByPropertyId(?)', [$id]);
+        $property_roomPrice = DB::select('CALL get_MinRoomPriceByProperty(?)', [$id]);
+        $reviews         = DB::select('CALL get_PropertyReviews(?)', [$id]);
+        $ratingData      = DB::select('CALL get_AverageRating(?)', [$id]);
+        $avgRating       = $ratingData[0]->avg_rating ?? 0;
+        $totalReviews    = $ratingData[0]->total_reviews ?? 0;
+
+        return response()->json([
+            'success'            => true,
+            'property'           => $property,
+            'locationData'       => $locationData,
+            'images'             => $images,
+            'fasilitas'          => $fasilitas,
+            'rooms'              => $rooms,
+            'property_roomPrice' => $property_roomPrice,
+            'reviews'            => $reviews,
+            'avgRating'          => $avgRating,
+            'totalReviews'       => $totalReviews,
+        ]);
+    }
+
+    public function bookingsAjax($id)
+    {
+        // Misal: panggil stored procedure atau query Eloquent untuk ambil daftar booking
+        $bookings = DB::select('CALL get_BookingsByProperty(?)', [$id]);
+        // Ambil nama properti singkat (bisa dari $bookings atau panggil lagi view_propertyById)
+        $prop = DB::select('CALL view_propertyById(?)', [$id])[0] ?? null;
+        $property_name = $prop->property_name ?? '—';
+
+        return response()->json([
+            'property_name' => $property_name,
+            'bookings' => $bookings
+        ]);
+    }
+
+    // AdminController.php
+    public function bookingDetailAjax($id)
+    {
+        // 1. Ambil tabel bookings
+        $bookingRaw = DB::select('CALL get_BookingById(?)', [$id]);
+        if (empty($bookingRaw)) {
+            return response()->json(['error' => 'Booking tidak ditemukan'], 404);
+        }
+        $booking = (array) $bookingRaw[0];
+
+        // 2. Ambil detail booking (booking_details)
+        $detailsRaw = DB::select('CALL get_BookingDetailsByBooking(?)', [$id]);
+        // Misal stored procedure mengembalikan kolom: room_type_name, quantity, price_per_room, subtotal
+        $details = array_map(function ($r) {
+            return (array) $r;
+        }, $detailsRaw);
+
+        // 3. Field “notes” (jika ada) – sesuaikan kolom di tabel booking
+        // Jika tidak ada, mengembalikan string kosong atau “-”
+        $booking['notes'] = $booking['notes'] ?? '';
+
+        return response()->json([
+            'booking' => $booking,
+            'details' => $details
+        ]);
+    }
+
+    public function allReviews(Request $request)
+    {
+        // Keyword pencarian (property name atau reviewer)
+        $search = $request->input('search');
+
+        // Stored procedure harus menerima parameter keyword ('' atau null artinya semua)
+        $raw = DB::select('CALL get_AllReviewsBySearch(?)', [$search]);
+        // Misal SP mengembalikan kolom:
+        // property_name, reviewer_name, rating, comment, created_at
+
+        // Konversi hasil ke array asosiatif
+        $reviews = array_map(function ($r) {
+            return (array) $r;
+        }, $raw);
+
+        return view('admin.reviews', compact('reviews', 'search'));
+    }
+
+    public function hide(Request $request, $id)
+    {
+        try {
+            DB::statement('CALL sp_hide_review(?)', [$id]);
+            return back()->with('success', 'Komentar berhasil disembunyikan.');
+        } catch (\Exception $e) {
+            // Pesan error, bisa custom atau ambil pesan dari exception
+            return back()->with('error', 'Gagal menyembunyikan komentar: ' . $e->getMessage());
+        }
+    }
+
+    public function unhide(Request $request, $id)
+    {
+        try {
+            DB::statement('CALL sp_unhide_review(?)', [$id]);
+            return back()->with('success', 'Komentar berhasil ditampilkan kembali.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menampilkan komentar: ' . $e->getMessage());
+        }
+    }
+
+    public function show()
+    {
+        $user = Auth::user();
+        return view('admin.profile', compact('user'));
     }
 }

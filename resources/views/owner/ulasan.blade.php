@@ -52,11 +52,16 @@
                         <th class="text-nowrap py-3 px-4">Rating</th>
                         <th class="py-3 px-4">Ulasan</th>
                         <th class="text-nowrap py-3 px-4">Tanggal</th>
+                        <th class="text-nowrap py-3 px-4">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white">
                     @foreach($reviews as $review)
-                        <tr class="align-middle hover-row">
+                        <tr class="align-middle hover-row"
+                            @if(!empty($review->is_hidden) && $review->is_hidden == 1)
+                                style="opacity:0.55;"
+                            @endif
+                        >
                             <td class="fw-semibold text-nowrap py-3 px-4">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi bi-building text-primary"></i>
@@ -104,10 +109,57 @@
                                     {{ \Carbon\Carbon::parse($review->created_at)->format('d M Y') }}
                                 </div>
                             </td>
+                            <td class="text-nowrap py-3 px-4">
+                                @if(!empty($review->is_hidden) && $review->is_hidden == 1)
+                                    <span class="badge bg-secondary text-light">Disembunyikan oleh Admin</span>
+                                @elseif(empty($review->is_reported) || $review->is_reported == 0)
+                                    <!-- Tombol Laporkan (trigger modal) -->
+                                    <button 
+                                        class="btn btn-outline-danger btn-sm"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#reportModal"
+                                        data-review-id="{{ $review->review_id }}"
+                                        data-property="{{ $review->property_name }}"
+                                    >
+                                        <i class="bi bi-flag"></i> Laporkan
+                                    </button>
+                                @else
+                                    <span class="badge bg-warning text-dark">Telah dilaporkan</span>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        <!-- Modal Laporkan Review -->
+        <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form method="POST" action="{{ route('owner.reviews.report') }}">
+                    @csrf
+                    <input type="hidden" name="review_id" id="reportReviewId">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="reportModalLabel">Laporkan Ulasan</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2">
+                                <strong>Properti:</strong> <span id="modalPropertyName"></span>
+                            </div>
+                            <div class="mb-3">
+                                <label for="report_reason" class="form-label">Alasan laporan</label>
+                                <textarea class="form-control" name="report_reason" id="report_reason" rows="3" required placeholder="Tuliskan alasan laporan..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-danger">Kirim Laporan</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     @endif
 </div>
@@ -160,7 +212,6 @@
         padding: 0.75rem 1rem;
     }
 
-    /* Stylings untuk input pencarian */
     #searchInput {
         background: #f8f9fa;
         border: 1px solid #ced4da;
@@ -180,14 +231,12 @@
         .table thead {
             display: none;
         }
-        
         .table tbody tr {
             display: block;
             margin-bottom: 1rem;
             border-radius: 1rem;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         }
-        
         .table tbody td {
             display: flex;
             justify-content: space-between;
@@ -195,7 +244,6 @@
             padding: 0.75rem 1.25rem;
             border-bottom: 1px solid #dee2e6;
         }
-        
         .table tbody td:last-child {
             border-bottom: none;
         }
@@ -204,6 +252,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Script pencarian tetap
         const searchInput = document.getElementById('searchInput');
         const table = document.getElementById('reviewsTable');
         const rows = table.tBodies[0].rows;
@@ -227,6 +276,19 @@
                 }
             }
         });
+
+        // Autofill modal report
+        var reportModal = document.getElementById('reportModal');
+        if(reportModal) {
+            reportModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var reviewId = button.getAttribute('data-review-id');
+                var property = button.getAttribute('data-property');
+                document.getElementById('reportReviewId').value = reviewId;
+                document.getElementById('modalPropertyName').innerText = property;
+                document.getElementById('report_reason').value = '';
+            });
+        }
     });
 </script>
 

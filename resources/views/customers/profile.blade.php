@@ -1,12 +1,50 @@
 @extends('layouts.index-welcome')
 @section('content')
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('success') || session('error'))
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    @if(session('success'))
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: '{{ session('success') }}',
+        timer: 1800,
+        showConfirmButton: false
+      });
+    @endif
+
+    @if(session('error'))
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: '{{ session('error') }}',
+        timer: 2000,
+        showConfirmButton: false
+      });
+    @endif
+  });
+</script>
+@endif
+
+
 @php
-  // Helper untuk inisial (jika belum ada di model, tambahkan juga accessor seperti sebelumnya)
-  $initials = Auth::user()->initials;
-  $avatarUrl = Auth::user()->profile_picture 
-               ? asset('storage/' . Auth::user()->profile_picture) 
-               : null;
+    function getInitials($name) {
+        $words = explode(' ', $name);
+        $initials = '';
+        foreach ($words as $w) {
+            if ($w) $initials .= strtoupper($w[0]);
+            if (strlen($initials) == 2) break;
+        }
+        return $initials;
+    }
+    $initials = getInitials($data->name ?? '');
+    $avatarUrl = $data->photo_profil
+        ? asset('storage/' . $data->photo_profil)
+        : null;
 @endphp
 
 <style>
@@ -21,7 +59,6 @@
   }
   body { background: var(--gray-light); }
 
-  /* Sidebar */
   .sidebar {
     background: var(--white);
     border-radius: var(--radius-lg);
@@ -37,12 +74,9 @@
     transition: background .2s, color .2s;
   }
   .menu-item i { margin-right: .5rem; font-size: 1.2rem; }
-  .menu-item.active,
-  .menu-item:hover {
+  .menu-item.active, .menu-item:hover {
     background: var(--green); color: var(--white)!important;
   }
-
-  /* Profile card */
   .profile-card {
     border: none;
     border-radius: var(--radius-lg);
@@ -88,15 +122,6 @@
     border-radius: 12px;
     margin-top: .5rem;
   }
-  .edit-avatar-btn {
-    position: absolute; bottom: 8px; right: 8px;
-    background: rgba(255,255,255,0.8);
-    border-radius: 50%; padding: .3rem;
-    transition: background .2s;
-  }
-  .edit-avatar-btn:hover { background: var(--white); }
-
-  /* Inisial avatar */
   .avatar-initials {
     font-weight: 600;
     background: var(--green);
@@ -124,17 +149,6 @@
     <section class="col-lg-9">
       <div class="card profile-card">
         <div class="profile-header">
-          <!-- Tombol ganti avatar -->
-          <form action="" method="POST"
-                enctype="multipart/form-data" class="edit-avatar-btn">
-            @csrf
-            <label for="avatarInput" class="mb-0" title="Ganti Foto">
-              <i class="bi bi-pencil-fill text-dark"></i>
-            </label>
-            <input type="file" name="avatar" id="avatarInput" accept="image/*" class="d-none"
-                   onchange="this.form.submit()">
-          </form>
-
           <div class="profile-avatar-wrapper avatar-initials">
             @if($avatarUrl)
               <img src="{{ $avatarUrl }}" alt="Avatar">
@@ -143,26 +157,31 @@
             @endif
           </div>
         </div>
-
         <div class="card-body profile-body">
-          {{-- <h5>{{ $user->name }}</h5> --}}
-          <p class="mb-1">{{ $user->userType_name }}</p>
-          {{-- @if($user->is_verified)
+          <h5>{{ $data->username ?? '-' }}</h5>
+          <p class="mb-1">Penyewa</p>
+          @if($data->email_verified_at)
             <span class="verified-badge"><i class="bi bi-patch-check-fill"></i> Terverifikasi</span>
-          @endif --}}
+          @endif
 
           <div class="mt-4 text-start px-4">
+            <h6 class="text-muted mb-2">Full Name</h6>
+            <p>{{ $data->name }}</p>
+
             <h6 class="text-muted mb-2">Email</h6>
-            <p>{{ $user->email }}</p>
+            <p>{{ $data->email_penyewa ?? $data->email }}</p>
 
             <h6 class="text-muted mb-2">Nomor HP</h6>
-            <p>{{ $user->phone ?? '-' }}</p>
+            <p>{{ $data->phone_number_penyewa ?? '-' }}</p>
+
+            <h6 class="text-muted mb-2">Jenis Kelamin</h6>
+            <p>{{ $data->gender_penyewa ?? '-' }}</p>
 
             <h6 class="text-muted mb-2">Alamat</h6>
-            <p>{{ $user->address ?? '-' }}</p>
+            <p>{{ $data->address_penyewa ?? '-' }}</p>
           </div>
 
-          <a href=""
+          <a href="{{ route('profileuser.edit') }}"
              class="btn btn-outline-success mt-4 rounded-pill px-4">
             <i class="bi bi-pencil-square me-1"></i> Edit Profil
           </a>
@@ -172,8 +191,6 @@
   </div>
 </div>
 
-<!-- Bootstrap Icons & JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 @endsection

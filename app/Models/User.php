@@ -14,7 +14,7 @@ class User extends Authenticatable
 
     protected $table = 'users'; // Nama tabel di database
 
-    protected $primaryKey = 'id'; // Primary key tabel
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'username',
@@ -22,7 +22,7 @@ class User extends Authenticatable
         'phone',
         'password',
         'userType_id', // FK ke user_types
-        'role_id', // FK ke user_roles
+        'role_id',     // FK ke user_roles
     ];
 
     protected $hidden = [
@@ -35,22 +35,49 @@ class User extends Authenticatable
         'is_banned' => 'boolean',
     ];
 
-    // Relasi ke userType
-    // public function userType()
-    // {
-    //     return $this->belongsTo(UserType::class, 'userType_id', 'userType_id');
-    // }
-
-    // Relasi ke role (berdasarkan tabel user_roles)
+    // Relasi ke UserRole (roles table)
     public function userRole()
     {
         return $this->belongsTo(UserRole::class, 'role_id', 'role_id');
     }
 
+    // === PENAMBAHAN START ===
+    // Relasi ke penyewa
+    public function penyewa()
+    {
+        return $this->hasOne(Penyewa::class, 'id_users', 'id');
+    }
+
+    // Inisial nama
     public function getInitialsAttribute(): string
     {
-        $names = explode(' ', trim($this->name));
-        $ini = array_map(fn($n)=> strtoupper(substr($n,0,1)), $names);
+        $name = $this->name ?? $this->username ?? '';
+        $names = explode(' ', trim($name));
+        $ini = array_map(fn($n) => strtoupper(substr($n, 0, 1)), $names);
         return implode('', array_slice($ini, 0, 2));
     }
+
+    // Accessor foto profil universal (penyewa/user)
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if ($this->penyewa && $this->penyewa->photo_profil) {
+            return asset('storage/' . $this->penyewa->photo_profil);
+        }
+        if ($this->profile_picture) {
+            return asset('storage/' . $this->profile_picture);
+        }
+        return null;
+    }
+
+    // app/Models/User.php
+    public function isPenyewaProfileComplete()
+    {
+        if (!$this->penyewa) return false;
+        return $this->penyewa->phone_number_penyewa &&
+            $this->penyewa->address_penyewa &&
+            $this->penyewa->gender_penyewa &&
+            $this->penyewa->photo_profil; // Atau kolom lain yang wajib
+    }
+
+    // === PENAMBAHAN END ===
 }

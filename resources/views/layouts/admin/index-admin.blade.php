@@ -367,7 +367,7 @@
         </a>
         <ul>
           <li><a href="{{ route('users.rolePenyewa') }}"><i class="material-icons-outlined">person_pin</i> Penyewa</a></li>
-          <li><a href="{{ route('users.rolePengusaha') }}"><i class="material-icons-outlined">business_center</i> Pengusaha</a></li>
+          <li><a href="{{ route('users.rolePengusaha') }}"><i class="material-icons-outlined">business_center</i> Pemilik Property</a></li>
         </ul>
       </li>
 
@@ -392,29 +392,24 @@
         <ul>
           <li><a href="{{ route('admin.tipe_property.index') }}"><i class="material-icons-outlined">category</i>Tipe Property</a></li>
           <li><a href="{{ route('admin.facilities.index') }}"><i class="material-icons-outlined">room_service</i> Fasilitas Property</a></li>
-          <li><a href="{{ route('admin.ulasan') }}"><i class="material-icons-outlined">rate_review</i> Ulasan & Rating</a></li>
+          <li><a href="{{ route('admin.reviews.index') }}"><i class="material-icons-outlined">rate_review</i> Ulasan & Rating</a></li>
         </ul>
       </li>
 
       <!-- History -->
       <li>
-        <a class="has-arrow" href="javascript:;">
+        <a href="{{ route('admin.bookings.index') }}">
           <div class="parent-icon"><i class="material-icons-outlined">history</i></div>
-          <div class="menu-title">History</div>
+          <div class="menu-title">Riwayat Pemesanan</div>
         </a>
-        <ul>
-          <li><a href="#"><i class="material-icons-outlined">receipt</i> Transaksi</a></li>
-          <li><a href="#"><i class="material-icons-outlined">payments</i> Pembayaran</a></li>
-        </ul>
       </li>
-
-      <!-- Laporan -->
       <li>
-        <a href="">
-          <div class="parent-icon"><i class="material-icons-outlined">assessment</i></div>
-          <div class="menu-title">Laporan</div>
-        </a>
-      </li>
+            <a href="{{ route('admin.profile') }}">
+              <div class="parent-icon"><i class="material-icons-outlined">person</i>
+              </div>
+              <div class="menu-title">Profile</div>
+            </a>
+          </li>
     </ul>
 </div>
   </aside>

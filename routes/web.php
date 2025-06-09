@@ -10,6 +10,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckUserRole;
@@ -24,7 +25,9 @@ use Illuminate\Support\Facades\DB;
 // ===============================
 
 // Landing page
+Route::middleware(['check_banned'])->group(function () {
 Route::get('/', [AuthController::class, 'landingpage'])->name('landingpage');
+});
 
 // Authentication routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -65,8 +68,10 @@ Route::get('/cari-property', [UserController::class, 'search_welcomeProperty'])-
 // BOOKING ROUTES (REQUIRES AUTHENTICATION)
 // ===============================
 
-Route::middleware(['auth', 'check_role:3'])->group(function () {
+Route::middleware(['auth', 'check_banned', 'check_role:3'])->group(function () {
     Route::get('/profile', [UserController::class, 'profile'])->name('profileuser.show');
+    Route::get('/profile/edit', [UserController::class, 'edit'])->name('profileuser.edit');
+    Route::post('/profile/update', [UserController::class, 'update'])->name('profileuser.update');
 
     // Riwayat transaksi
     Route::get('/riwayat-transaksi', [UserController::class, 'riwayat_transaksi'])->name('riwayat-transaksi.index');
@@ -149,7 +154,7 @@ Route::get('/users/role3', [AdminController::class, 'showUsersRole3Penyewa'])->n
 // ===============================
 // OWNER ROUTES (REQUIRES OWNER ROLE)
 // ===============================
-Route::middleware(['auth', 'check_role:2'])->group(function () {
+Route::middleware(['auth', 'check_banned', 'check_role:2'])->group(function () {
     Route::get('/dashboard-owner', [OwnerController::class, 'showOwnerpage'])->name('owner.dashboard');
     Route::get('/property', [OwnerController::class, 'showPropertypage'])->name('owner.property');
     Route::get('/add-property', [OwnerController::class, 'add_property'])->name('owner.add-property');
@@ -195,6 +200,9 @@ Route::get('/owner/bookings/{booking_id}', [OwnerController::class, 'detail_book
      ->name('owner.bookings.detail')
      ->middleware('auth');
 
+Route::post('/owner/reviews/report', [ReviewController::class, 'report'])->name('owner.reviews.report');
+
+
 
 Route::get('/admin/pengusaha/detail', [AdminController::class, 'getDetailPengusaha'])->name('admin.pengusaha.detail');
 Route::get('/admin/penyewa/detail', [AdminController::class, 'getDetailPenyewa'])->name('admin.penyewa.detail');
@@ -226,6 +234,54 @@ Route::prefix('admin/')->name('admin.')->group(function () {
 });
 
 
+// Grup prefix “admin/homestay”
+Route::prefix('admin/homestay')->group(function () {
+    // Rute AJAX untuk modal detail
+    Route::get('{id}/detail-ajax', [AdminController::class, 'detailAjax'])
+         ->name('homestay.detailAjax');
+
+    // Rute “biasa” untuk showDetailProperty (misalnya halaman edit/detail full page)
+    Route::get('{id}/edit', [AdminController::class, 'showDetailProperty'])
+         ->name('homestay.showDetailProperty');
+});
+
+Route::get('admin/homestay/{id}/bookings-ajax', [AdminController::class, 'bookingsAjax'])->whereNumber('id')->name('admin.homestay.bookingsAjax');
+Route::get('admin/booking/{id}/detail-ajax', [AdminController::class, 'bookingDetailAjax'])
+     ->whereNumber('id')
+     ->name('admin.booking.detailAjax');
+
+// Route::get('admin/reviews', [AdminController::class, 'allReviews'])->name('admin.reviews.index');
+
+Route::get('reviews', [AdminController::class, 'allReviews'])->name('admin.reviews.index');
+Route::patch('admin/reviews/{id}/hide',   [AdminController::class, 'hide'])->name('admin.reviews.hide');
+Route::patch('admin/reviews/{id}/unhide', [AdminController::class, 'unhide'])->name('admin.reviews.unhide');
+
+
+
 Route::get('/admin/ulasan', [AdminController::class, 'index_ulasan'])->name('admin.ulasan');
+
+// Booking history table
+Route::get('/admin/bookings', [BookingController::class, 'index'])->name('admin.bookings.index');
+
+// Booking detail for modal (AJAX)
+Route::get('/admin/bookings/{id}/detail', [BookingController::class, 'showDetail'])->name('admin.bookings.detail');
+
+Route::get('/payment/{booking_id}/resi', [PaymentController::class, 'downloadResi'])
+    ->name('payment.downloadResi');
+
+
+
+
+Route::get('password/forgot',    [ResetPasswordController::class, 'showForgotForm'])->name('password.forgot');
+Route::post('password/forgot',   [ResetPasswordController::class, 'sendToken']);
+
+Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('password/reset',        [ResetPasswordController::class, 'resetPassword'])->name('password.update');
+
+Route::get('/profile-owner', [OwnerController::class, 'show'])->name('profileowner.show');
+Route::get('/profile-owner/edit', [OwnerController::class, 'edit'])->name('profileowner.edit');
+Route::post('/profile-owner/update', [OwnerController::class, 'update'])->name('profileowner.update');
+
+Route::get('/admin/profile', [AdminController::class, 'show'])->name('admin.profile');
 
 

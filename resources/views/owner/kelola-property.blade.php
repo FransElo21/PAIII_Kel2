@@ -82,6 +82,60 @@
             color: #289A84;
             font-weight: 600;
         }
+        .facilities-container {
+            border: 1px solid #e9ecef;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: var(--shadow-soft);
+            background: #fff;
+            position: relative;
+            }
+
+            .autocomplete-dropdown {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ced4da;
+            border-top: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            z-index: 1050;
+            display: none;
+            }
+
+            .autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            }
+
+            .autocomplete-item:hover {
+            background: #f8f9fa;
+            }
+
+            .facility-tag {
+            border-radius: 2rem;
+            padding: 0.4rem 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            margin: 0.2rem;
+            font-size: 0.9rem;
+            }
+
+            .facility-tag i {
+            margin-right: 0.4rem;
+            }
+
+            .remove-facility {
+            margin-left: 0.5rem;
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+            opacity: 0.8;
+            }
+
+            .remove-facility:hover {
+            color: #dc3545;
+            opacity: 1;
+            }
     </style>
 
     <nav aria-label="breadcrumb">
@@ -172,49 +226,43 @@
                 </div>
 
                 <!-- Fasilitas -->
-                <div class="col-12">
-                <label class="form-label fw-semibold">Fasilitas</label>
-                <div class="facilities-container position-relative mb-3">
-                    <input
-                    type="text"
-                    class="form-control mb-2"
-                    id="facilityInput"
-                    placeholder="Cari fasilitas..."
-                    autocomplete="off"
-                    >
-                    <div
-                    id="facilityDropdown"
-                    class="list-group autocomplete-dropdown"
-                    style="position: absolute; width: 100%; z-index: 1000; display: none;"
-                    ></div>
-
-                    {{-- badge fasilitas terpilih --}}
-                    <div id="selectedFacilities" class="d-flex flex-wrap gap-2 mb-2">
-                    @foreach($facilities  as $pf)
-                        <div
-                        class="badge bg-primary d-flex align-items-center gap-1 px-2 py-1"
-                        data-id="{{ $pf->facility_id }}"
-                        >
-                        {{ $pf->facility_name }}
-                        <button
-                            type="button"
-                            class="btn-close btn-close-white btn-sm remove-facility ms-1"
-                        ></button>
-                        </div>
-                    @endforeach
-                    </div>
-
-                    {{-- hidden inputs untuk form --}}
-                    {{-- <div id="hiddenFacilitiesContainer">
-                    @foreach($facilities as $pf)
+                <div class="col-12 mb-3">
+                    <label class="form-label fw-semibold">Fasilitas</label>
+                    <div class="facilities-container position-relative mb-3">
                         <input
-                        type="hidden"
-                        name="facilities[]"
-                        value="{{ $pf->facility_id }}"
-                        >
-                    @endforeach
-                    </div> --}}
-                </div>
+                            type="text"
+                            class="form-control mb-2"
+                            id="facilityInput"
+                            placeholder="Cari fasilitas..."
+                            autocomplete="off"
+                        />
+                        <div id="facilityDropdown" class="list-group autocomplete-dropdown"></div>
+
+                        {{-- badge fasilitas terpilih --}}
+                        <div id="selectedFacilities" class="d-flex flex-wrap gap-2 mb-2">
+                            @foreach($facilities as $facility)
+                                <div
+                                    class="facility-tag badge bg-primary d-flex align-items-center gap-1 px-2 py-1"
+                                    data-id="{{ $facility->facility_id }}"
+                                >
+                                    <i class="bi bi-{{ $facility->icon }} me-2" style="font-size: 1.2rem;"></i>
+                                    {{ $facility->facility_name }}
+                                    <button type="button" class="btn-close btn-close-white btn-sm remove-facility ms-1"></button>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        {{-- hidden inputs untuk form --}}
+                        <div id="hiddenFacilitiesContainer">
+                            @foreach($facilities as $facility)
+                                <input
+                                    type="hidden"
+                                    name="facilities[]"
+                                    value="{{ $facility->facility_id }}"
+                                >
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -651,18 +699,16 @@
 
             // Hapus fasilitas
             document.getElementById("selectedFacilities").addEventListener("click", function (e) {
-                if (e.target.classList.contains("delete-facility") || e.target.closest(".delete-facility")) {
-                    const button = e.target.closest(".delete-facility");
-                    const facilityId = button.dataset.id;
+                if (e.target.classList.contains("remove-facility")) {
+                    const btn = e.target;
+                    const facilityId = btn.closest('.facility-tag').dataset.id;
 
                     Swal.fire({
-                        title: 'Apakah Anda yakin?',
-                        text: "Anda tidak dapat mengembalikan fasilitas ini!",
+                        title: 'Yakin menghapus fasilitas?',
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Ya, hapus!'
+                        confirmButtonText: 'Ya, hapus',
+                        cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
                             fetch("{{ route('property.facility.delete') }}", {
@@ -673,19 +719,16 @@
                                 },
                                 body: JSON.stringify({ facility_id: facilityId })
                             })
-                            .then(response => response.json())
+                            .then(res => res.json())
                             .then(data => {
                                 if (data.success) {
                                     showToast('Fasilitas berhasil dihapus.', 'success');
-                                    button.closest('.facility-tag').remove();
+                                    loadFacilities(); // fungsi reload daftar fasilitas
                                 } else {
                                     showToast('Gagal menghapus fasilitas: ' + data.message, 'danger');
                                 }
                             })
-                            .catch(error => {
-                                console.error("Error:", error);
-                                showToast('Terjadi kesalahan saat menghapus fasilitas.', 'danger');
-                            });
+                            .catch(() => showToast('Kesalahan jaringan saat hapus fasilitas.', 'danger'));
                         }
                     });
                 }
@@ -1000,11 +1043,39 @@ document.addEventListener('DOMContentLoaded', () => {
     let facilities = []; // cache suggestion
 
     // Fetch list facility (bisa endpoint your-route)
-    async function loadFacilities() {
-    const res = await fetch("{{ route('property.get-selected-facilities', $property->property_id) }}");
-      facilities = await res.json(); // [{id, name},...]
-    }
-    loadFacilities();
+    function loadFacilities() {
+    fetch("{{ route('property.get-selected-facilities', $property->property_id) }}")
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('selectedFacilities');
+            const hiddenBox = document.getElementById('hiddenFacilitiesContainer');
+            container.innerHTML = '';
+            hiddenBox.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-muted ms-3">Belum ada fasilitas dipilih.</p>';
+                return;
+            }
+
+            data.forEach(facility => {
+                const div = document.createElement('div');
+                div.className = 'facility-tag badge bg-primary d-flex align-items-center gap-1 px-2 py-1';
+                div.dataset.id = facility.id;
+                div.innerHTML = `
+                    <i class="bi bi-${facility.icon || 'building'} me-2" style="font-size:1.2rem;"></i>
+                    ${facility.facility_name}
+                    <button type="button" class="btn-close btn-close-white btn-sm remove-facility ms-1"></button>
+                `;
+                container.appendChild(div);
+
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'facilities[]';
+                hiddenInput.value = facility.id;
+                hiddenBox.appendChild(hiddenInput);
+            });
+        });
+}
 
     // Render dropdown filtered
     input.addEventListener('input', () => {
@@ -1078,87 +1149,98 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const allFacilities = @json($allFacilities);
-    const input     = document.getElementById('facilityInput');
-    const dropdown  = document.getElementById('facilityDropdown');
-    const selected  = document.getElementById('selectedFacilities');
-    const hiddenBox = document.getElementById('hiddenFacilitiesContainer');
+    document.addEventListener('DOMContentLoaded', () => {
+        const allFacilities = @json($allFacilities); // Semua fasilitas dari controller
+        const input = document.getElementById('facilityInput');
+        const dropdown = document.getElementById('facilityDropdown');
+        const selected = document.getElementById('selectedFacilities');
+        const hiddenBox = document.getElementById('hiddenFacilitiesContainer');
 
-    // Tampilkan dropdown jika ada input
-    input.addEventListener('input', () => {
-      const term = input.value.trim().toLowerCase();
-      dropdown.innerHTML = '';
-      if (!term) {
-        dropdown.style.display = 'none';
-        return;
-      }
-      allFacilities
-        .filter(f => f.facility_name.toLowerCase().includes(term))
-        .slice(0, 10)
-        .forEach(f => {
-          const btn = document.createElement('button');
-          btn.type  = 'button';
-          btn.className = 'list-group-item list-group-item-action';
-          btn.textContent = f.facility_name;
-          btn.dataset.id = f.facility_id;
-          dropdown.appendChild(btn);
+        // Tampilkan dropdown jika ada input
+        input.addEventListener('input', () => {
+            const term = input.value.trim().toLowerCase();
+            dropdown.innerHTML = '';
+            if (!term) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const filtered = allFacilities
+                .filter(f => f.facility_name.toLowerCase().includes(term))
+                .slice(0, 10);
+
+            if (filtered.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            filtered.forEach(f => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'list-group-item list-group-item-action';
+                btn.textContent = f.facility_name;
+                btn.dataset.id = f.id || f.facility_id;
+                btn.dataset.icon = f.icon || '';
+                dropdown.appendChild(btn);
+            });
+
+            dropdown.style.display = 'block';
         });
-      dropdown.style.display = dropdown.children.length ? 'block' : 'none';
+
+        // Klik pilihan dropdown
+        dropdown.addEventListener('click', e => {
+            if (e.target.tagName !== 'BUTTON') return;
+            const id = e.target.dataset.id;
+            const name = e.target.textContent;
+            const icon = e.target.dataset.icon;
+
+            // Cegah duplikat
+            if (hiddenBox.querySelector(`input[value="${id}"]`)) {
+                input.value = '';
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            // Buat badge baru
+            const badge = document.createElement('div');
+            badge.className = 'facility-tag badge bg-primary d-flex align-items-center gap-1 px-2 py-1';
+            badge.dataset.id = id;
+            badge.innerHTML = `
+                <i class="bi bi-${icon} me-2" style="font-size: 1.2rem;"></i>
+                ${name}
+                <button type="button" class="btn-close btn-close-white btn-sm remove-facility ms-1"></button>
+            `;
+            selected.appendChild(badge);
+
+            // Buat hidden input
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'facilities[]';
+            hidden.value = id;
+            hiddenBox.appendChild(hidden);
+
+            // Bersihkan input dan dropdown
+            input.value = '';
+            dropdown.style.display = 'none';
+        });
+
+        // Hapus badge & hidden input
+        selected.addEventListener('click', e => {
+            if (!e.target.classList.contains('remove-facility')) return;
+            const badge = e.target.closest('.facility-tag');
+            const id = badge.dataset.id;
+            badge.remove();
+            const hid = hiddenBox.querySelector(`input[value="${id}"]`);
+            if (hid) hid.remove();
+        });
+
+        // Klik di luar untuk tutup dropdown
+        document.addEventListener('click', e => {
+            if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
     });
-
-    // Klik pilihan dropdown
-    dropdown.addEventListener('click', e => {
-      if (e.target.tagName !== 'BUTTON') return;
-      const id   = e.target.dataset.id;
-      const name = e.target.textContent;
-
-      // hindari duplikat
-      if (hiddenBox.querySelector(`input[value="${id}"]`)) {
-        input.value = '';
-        dropdown.style.display = 'none';
-        return;
-      }
-
-      // buat badge baru
-      const badge = document.createElement('div');
-      badge.className = 'badge bg-primary d-flex align-items-center gap-1 px-2 py-1';
-      badge.dataset.id = id;
-      badge.innerHTML = `
-        ${name}
-        <button type="button" class="btn-close btn-close-white btn-sm remove-facility ms-1"></button>
-      `;
-      selected.appendChild(badge);
-
-      // buat hidden input
-      const hidden = document.createElement('input');
-      hidden.type  = 'hidden';
-      hidden.name  = 'facilities[]';
-      hidden.value = id;
-      hiddenBox.appendChild(hidden);
-
-      // bersihkan
-      input.value = '';
-      dropdown.style.display = 'none';
-    });
-
-    // Hapus badge & hidden input
-    selected.addEventListener('click', e => {
-      if (!e.target.classList.contains('remove-facility')) return;
-      const badge = e.target.closest('.badge');
-      const id    = badge.dataset.id;
-      badge.remove();
-      const hid   = hiddenBox.querySelector(`input[value="${id}"]`);
-      if (hid) hid.remove();
-    });
-
-    // klik di luar untuk tutup dropdown
-    document.addEventListener('click', e => {
-      if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.style.display = 'none';
-      }
-    });
-  });
 </script>
 
 <script>
@@ -1270,6 +1352,82 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   });
 });
+</script>
+
+<script>
+    $(function(){
+  const allFacilities = @json($allFacilities);
+  const input = $('#facilityInput');
+  const dropdown = $('#facilityDropdown');
+  const selected = $('#selectedFacilities');
+  const hiddenBox = $('#hiddenFacilitiesContainer');
+
+  // Fungsi tampilkan dropdown filter
+  input.on('input', function(){
+    const term = $(this).val().trim().toLowerCase();
+    dropdown.empty();
+    if(!term) {
+      dropdown.hide();
+      return;
+    }
+    let filtered = allFacilities.filter(f => f.facility_name.toLowerCase().includes(term));
+    if(filtered.length === 0){
+      dropdown.hide();
+      return;
+    }
+    filtered.slice(0, 10).forEach(f => {
+      dropdown.append(`<div class="autocomplete-item" data-id="${f.facility_id}" data-icon="${f.icon}">${f.facility_name}</div>`);
+    });
+    dropdown.show();
+  });
+
+  // Klik pilih fasilitas di dropdown
+  dropdown.on('click', '.autocomplete-item', function(){
+    const id = $(this).data('id');
+    const name = $(this).text();
+    const icon = $(this).data('icon') || 'building';
+
+    // Cegah duplikat
+    if(hiddenBox.find(`input[value="${id}"]`).length > 0){
+      input.val('');
+      dropdown.hide();
+      return;
+    }
+
+    // Tambah tag badge
+    const tag = $(`
+      <div class="facility-tag badge bg-primary d-flex align-items-center gap-1 px-2 py-1" data-id="${id}">
+        <i class="bi bi-${icon} me-2" style="font-size: 1.2rem;"></i>
+        ${name}
+        <button type="button" class="btn-close btn-close-white btn-sm remove-facility ms-1"></button>
+      </div>
+    `);
+    selected.append(tag);
+
+    // Tambah hidden input
+    hiddenBox.append(`<input type="hidden" name="facilities[]" value="${id}">`);
+
+    // Reset input dan dropdown
+    input.val('');
+    dropdown.hide();
+  });
+
+  // Hapus fasilitas yang dipilih
+  selected.on('click', '.remove-facility', function(){
+    const parent = $(this).closest('.facility-tag');
+    const id = parent.data('id');
+    parent.remove();
+    hiddenBox.find(`input[value="${id}"]`).remove();
+  });
+
+  // Klik di luar dropdown untuk sembunyikan dropdown
+  $(document).on('click', function(e){
+    if(!input.is(e.target) && !dropdown.is(e.target) && dropdown.has(e.target).length === 0){
+      dropdown.hide();
+    }
+  });
+});
+
 </script>
 
 @endsection

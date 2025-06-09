@@ -211,8 +211,12 @@
             <label class="form-label fw-semibold">Fasilitas</label>
             <div class="facilities-container position-relative mb-3">
               <input type="text" class="form-control mb-2" id="facilityInput" placeholder="Cari fasilitas...">
-              <div class="autocomplete-dropdown" id="facilityDropdown"></div>
-              <div id="selectedFacilities" class="d-flex flex-wrap"></div>
+
+              <div id="allFacilitiesList" style="max-height: 200px; overflow-y: auto; border:1px solid #ced4da; border-radius: .5rem; padding: .5rem; background:#fff;">
+                <!-- Daftar fasilitas lengkap akan muncul di sini -->
+              </div>
+
+              <div id="selectedFacilities" class="d-flex flex-wrap mt-3"></div>
               <div id="hiddenFacilitiesContainer"></div>
             </div>
           </div>
@@ -359,6 +363,100 @@ $(function(){
       reader.readAsDataURL(f);
     });
   }
+</script>
+
+<script>
+$(function() {
+  let allFacilities = [];
+  let selIds = [];
+
+  // Load semua fasilitas dari backend sekali saat halaman ready
+  function loadAllFacilities() {
+    $.getJSON('/get-facilities', function(data) {
+      allFacilities = data;
+      renderFacilitiesList(allFacilities);
+    });
+  }
+
+  // Render daftar fasilitas di #allFacilitiesList sesuai array fasilitas yg diberikan
+  function renderFacilitiesList(facilities) {
+    if(facilities.length === 0) {
+      $('#allFacilitiesList').html('<p class="text-center text-muted mb-0">Fasilitas tidak ditemukan.</p>');
+      return;
+    }
+    let html = '';
+    facilities.forEach(f => {
+      const isSelected = selIds.includes(f.id.toString());
+      html += `
+        <div class="facility-item d-flex align-items-center gap-2 p-2 rounded mb-1" 
+            style="cursor:pointer; background: ${isSelected ? '#d1e7dd' : 'transparent'};"
+            data-id="${f.id}" data-name="${f.name}" data-icon="${f.icon || ''}">
+          <i class="bi bi-${f.icon || ''} me-2" style="font-size: 1.5rem;"></i>
+          <span>${f.name}</span>
+          ${isSelected ? '<i class="bi bi-check-circle-fill ms-auto text-success fs-5"></i>' : ''}
+        </div>
+      `;
+    });
+    $('#allFacilitiesList').html(html);
+  }
+
+  // Fungsi tambah fasilitas ke tag & hidden input
+  function addFacility(id, name, icon='') {
+    if(selIds.includes(id.toString())) return;
+    selIds.push(id.toString());
+    const tag = $(`<span class="facility-tag" data-id="${id}"><i class="bi ${icon}"></i> ${name}<span class="remove-facility">&times;</span></span>`);
+    $('#selectedFacilities').append(tag);
+    $('#hiddenFacilitiesContainer').append(`<input type="hidden" name="facilities[]" value="${id}">`);
+  }
+
+  // Fungsi hapus fasilitas dari tag & hidden input
+  function removeFacility(id) {
+    selIds = selIds.filter(x => x !== id.toString());
+    $(`#selectedFacilities [data-id='${id}']`).remove();
+    $(`#hiddenFacilitiesContainer input[value='${id}']`).remove();
+  }
+
+  // Event klik fasilitas di daftar lengkap → toggle select
+  $('#allFacilitiesList').on('click', '.facility-item', function(){
+    const id = $(this).data('id').toString();
+    const name = $(this).data('name');
+    const icon = $(this).data('icon') || '';
+
+    if(selIds.includes(id)) {
+      removeFacility(id);
+    } else {
+      addFacility(id, name, icon);
+    }
+    // Re-render daftar untuk update highlight & icon centang
+    renderFacilitiesList(allFacilities.filter(f => {
+      // filter sesuai input pencarian jika ada
+      const q = $('#facilityInput').val().toLowerCase();
+      return f.name.toLowerCase().includes(q);
+    }));
+  });
+
+  // Event klik tombol x pada tag fasilitas
+  $('#selectedFacilities').on('click', '.remove-facility', function(){
+    const parent = $(this).closest('.facility-tag');
+    const id = parent.data('id').toString();
+    removeFacility(id);
+    // Update daftar untuk hilangkan centang & highlight
+    renderFacilitiesList(allFacilities.filter(f => {
+      const q = $('#facilityInput').val().toLowerCase();
+      return f.name.toLowerCase().includes(q);
+    }));
+  });
+
+  // Event input pencarian → filter daftar lengkap fasilitas
+  $('#facilityInput').on('input', function(){
+    const q = $(this).val().toLowerCase();
+    const filtered = allFacilities.filter(f => f.name.toLowerCase().includes(q));
+    renderFacilitiesList(filtered);
+  });
+
+  // Load fasilitas saat halaman siap
+  loadAllFacilities();
+});
 </script>
 
 @endsection

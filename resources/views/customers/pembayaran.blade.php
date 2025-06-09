@@ -113,7 +113,7 @@
             <div class="card payment-card">
                 <div class="card-body p-4">
 
-                    <!-- Total harga di dalam card, di atas -->
+                    <!-- Total harga di dalam card -->
                     <h4 class="fw-bold mb-4 text-center" style="color:#289A84;">
                         <i class="bi bi-cash-coin me-1"></i> Pembayaran
                     </h4>
@@ -228,9 +228,12 @@
     </div>
 </div>
 
+{{-- Script Snap.js dan aksi tombol --}}
+<script src="https://app.sandbox.midtrans.com/snap/snap.js"
+        data-client-key="{{ config('services.midtrans.clientKey') }}"></script>
 <script>
-    const snapToken = '{{ request()->query("snap_token", "") }}';
     document.getElementById('pay-button')?.addEventListener('click', function() {
+        var snapToken = @json($snapToken);
         if (!snapToken) {
             Swal.fire({
                 icon: 'error',
@@ -244,7 +247,7 @@
             onSuccess: function(result) {
                 window.location.href = "{{ route('payment.success', ['booking_id' => $bookingId]) }}";
             },
-            onPending: function(result) { console.log('PENDING', result); },
+            onPending: function(result) { window.location.reload(); },
             onError: function(result) {
                 Swal.fire({
                     icon: 'error',
@@ -298,6 +301,4 @@
         });
     });
 </script>
-<script src="https://app.sandbox.midtrans.com/snap/snap.js"
-        data-client-key="{{ config('services.midtrans.clientKey') }}"></script>
 @endsection

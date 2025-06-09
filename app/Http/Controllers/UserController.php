@@ -284,6 +284,7 @@ class UserController extends Controller
     }
 
 
+
     public function profile()
     {
         $userId = Auth::id();
@@ -293,9 +294,19 @@ class UserController extends Controller
             abort(404);
         }
 
-        $data = (object)$result[0]; // konversi ke object
-        return view('customers.profile', compact('data'));
+        $data = (object)$result[0];
+
+        // Cek apakah file ada di storage
+        $photoProfil = $data->photo_profil ?? null;
+        $avatarUrl = null;
+        if ($photoProfil && Storage::disk('public')->exists($photoProfil)) {
+            $avatarUrl = asset('storage/' . $photoProfil);
+        }
+
+        // Kirim $avatarUrl ke view
+        return view('customers.profile', compact('data', 'avatarUrl'));
     }
+
 
 
     public function tentang()
@@ -839,7 +850,7 @@ class UserController extends Controller
             // Generate nama file unik
             $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
 
-            // Simpan file di folder public/storage/penyewa
+            // Simpan file di folder storage/app/public/penyewa
             $image->storeAs('penyewa', $filename, 'public');
 
             // Path relatif yang akan disimpan ke database

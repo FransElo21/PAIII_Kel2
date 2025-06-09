@@ -15,38 +15,28 @@ class PaymentController extends Controller
 
     public function payment_show(Request $request, $booking_id)
     {
-        // Ambil detail booking dari stored procedure
+        // Ambil detail booking
         $bookingDetails = DB::select('CALL get_BookingDetails(?)', [$booking_id]);
+        if (empty($bookingDetails)) abort(404);
 
-        if (empty($bookingDetails)) {
-            abort(404);
-        }
-
-        // Baris pertama untuk summary booking
         $booking = $bookingDetails[0];
-
-        // Semua baris untuk detail kamar
         $rooms = $bookingDetails;
 
-        // Cek kadaluarsa booking
+        // Cek kadaluarsa
         $result = DB::select('CALL check_booking_expiration(?)', [$booking_id]);
         if ($result && isset($result[0]->status) && $result[0]->status === 'Kadaluarsa') {
             return redirect()->route('landingpage')->with('error', 'Booking sudah kadaluarsa.');
         }
 
-        // Cek apakah snap_token ada di query parameter, jika tidak ambil dari DB
-        $snapToken = $request->query('snap_token', null);
-        if (!$snapToken) {
-            // Ambil snap_token dari database berdasarkan booking_id
-            $snapTokenResult = DB::select('CALL get_snap_token(?)', [$booking_id]);
-            if (!empty($snapTokenResult) && isset($snapTokenResult[0]->url_pembayaran)) {
-                $snapToken = $snapTokenResult[0]->url_pembayaran;
-            }
-        }
+        // Ambil snaptoken dari database
+        $snapTokenResult = DB::select('CALL get_snap_token(?)', [$booking_id]);
+        $snapToken = !empty($snapTokenResult) && isset($snapTokenResult[0]->url_pembayaran)
+            ? $snapTokenResult[0]->url_pembayaran
+            : null;
 
-        // Kirim data ke Blade
         return view('customers.pembayaran', compact('booking', 'rooms', 'snapToken'));
     }
+
 
     public function process(Request $request)
     {

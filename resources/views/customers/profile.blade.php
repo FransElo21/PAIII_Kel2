@@ -148,7 +148,7 @@
       <div class="card profile-card">
         <div class="profile-header">
           <div class="profile-avatar-wrapper avatar-initials">
-            @if($avatarUrl)
+            @if(!empty($avatarUrl))
               <img src="{{ $avatarUrl }}" alt="Avatar">
             @else
               {{ $initials }}

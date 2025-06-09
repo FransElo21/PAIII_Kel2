@@ -818,29 +818,29 @@ class UserController extends Controller
             'phone_number_penyewa' => 'nullable|string|max:20',
             'address_penyewa' => 'nullable|string|max:255',
             'gender_penyewa' => 'nullable|string|max:25',
-            'photo_profil' => 'nullable|image|max:2048',
+            'photo_profil' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $photo = null;
-        if ($request->hasFile('photo_profil')) {
-            // Ambil data penyewa
-            $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
 
-            // Hapus foto lama (jika ada)
-            if ($penyewa && $penyewa->photo_profil && file_exists(public_path('penyewa/' . $penyewa->photo_profil))) {
-                unlink(public_path('penyewa/' . $penyewa->photo_profil));
+        if ($request->hasFile('photo_profil')) {
+            // Cari data lama
+            $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
+            // Hapus foto lama jika ada
+            if ($penyewa && $penyewa->photo_profil && file_exists(public_path('storage/photo_profil/' . $penyewa->photo_profil))) {
+                unlink(public_path('storage/photo_profil/' . $penyewa->photo_profil));
             }
 
-            // Proses upload dan rename (misal: userID_timestamp.ext)
             $file = $request->file('photo_profil');
-            $filename = $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $destinationPath = public_path('penyewa');
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            $destinationPath = public_path('storage/photo_profil');
             if (!file_exists($destinationPath)) {
                 mkdir($destinationPath, 0755, true);
             }
             $file->move($destinationPath, $filename);
 
-            // Simpan nama file (relatif dari folder /public/penyewa)
+            // Simpan hanya nama file
             $photo = $filename;
         } else {
             // Tetap gunakan foto lama jika tidak upload baru
@@ -850,7 +850,7 @@ class UserController extends Controller
             }
         }
 
-        // Jalankan Stored Procedure (atau query update biasa)
+        // Jalankan Stored Procedure
         DB::statement('CALL upsert_profile_penyewa(?, ?, ?, ?, ?, ?, ?)', [
             $user->id,
             $request->name,
@@ -858,7 +858,7 @@ class UserController extends Controller
             $request->phone_number_penyewa,
             $request->address_penyewa,
             $request->gender_penyewa,
-            $photo // simpan nama file saja
+            $photo // hanya nama file saja, pathnya diatur di view
         ]);
 
         return redirect()->route('profileuser.show')->with('success', 'Profil berhasil diperbarui.');

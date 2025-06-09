@@ -823,23 +823,42 @@ class UserController extends Controller
 
         $photo = null;
         if ($request->hasFile('photo_profil')) {
-            // Cari foto lama untuk dihapus
+            // Ambil data penyewa
             $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
-            if ($penyewa && $penyewa->photo_profil && Storage::exists('public/' . $penyewa->photo_profil)) {
-                Storage::delete('public/' . $penyewa->photo_profil);
+
+            // Hapus foto lama (jika ada)
+            if ($penyewa && $penyewa->photo_profil && file_exists(public_path('penyewa/' . $penyewa->photo_profil))) {
+                unlink(public_path('penyewa/' . $penyewa->photo_profil));
             }
-            $photo = $request->file('photo_profil')->store('penyewa', 'public');
+
+            // Proses upload dan rename (misal: userID_timestamp.ext)
+            $file = $request->file('photo_profil');
+            $filename = $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $destinationPath = public_path('penyewa');
+            if (!file_exists($destinationPath)) {
+                mkdir($destinationPath, 0755, true);
+            }
+            $file->move($destinationPath, $filename);
+
+            // Simpan nama file (relatif dari folder /public/penyewa)
+            $photo = $filename;
+        } else {
+            // Tetap gunakan foto lama jika tidak upload baru
+            $penyewa = DB::table('penyewa')->where('id_users', $user->id)->first();
+            if ($penyewa) {
+                $photo = $penyewa->photo_profil;
+            }
         }
 
-        // Jalankan Stored Procedure
+        // Jalankan Stored Procedure (atau query update biasa)
         DB::statement('CALL upsert_profile_penyewa(?, ?, ?, ?, ?, ?, ?)', [
             $user->id,
             $request->name,
             $request->email,
-            $request->phone_number_penyewa, // Sudah format +62... karena sudah diubah via JS!
+            $request->phone_number_penyewa,
             $request->address_penyewa,
             $request->gender_penyewa,
-            $photo // null jika tidak upload
+            $photo // simpan nama file saja
         ]);
 
         return redirect()->route('profileuser.show')->with('success', 'Profil berhasil diperbarui.');

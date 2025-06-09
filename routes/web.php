@@ -175,6 +175,11 @@ Route::middleware(['auth', 'check_banned', 'check_role:2'])->group(function () {
     Route::get('/property/room/{id}/edit', [OwnerController::class, 'editRoom'])->name('property.room.edit');
     Route::put('/property/room/update', [OwnerController::class, 'updateRoom'])->name('property.room.update');
     Route::delete('property/room/{room_id}',[OwnerController::class, 'deleteRoom'])->name('property.room.delete');
+    Route::put('/property/{property}/room/{room}/update', [OwnerController::class, 'update_room'])->name('property.room.update');
+
+    // web.php
+    // Route::put('/property/{property}/room/{room}/update', [OwnerController::class, 'update'])->name('property.room.update');
+
 
     // Location Routes
     Route::get('/provinces', [LocationController::class, 'getProvinces']);

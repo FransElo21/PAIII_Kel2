@@ -567,6 +567,53 @@ class OwnerController extends Controller
         }
     }
 
+    // Tambahkan di OwnerController.php
+    public function editRoom($id)
+    {
+        // Misal: ambil data room dari DB
+        $room = DB::table('rooms')->where('room_id', $id)->first();
+
+        if (!$room) {
+            abort(404);
+        }
+
+        return view('owner.edit-room', compact('room'));
+    }
+
+    public function update_room(Request $request, $propertyId, $roomId)
+    {
+        $request->validate([
+            'room_type'  => 'required|string|max:255',
+            'price'      => 'required|numeric',
+            'stok'       => 'required|integer',
+            'room_image' => 'nullable|image|max:2048',
+        ]);
+
+        // Default: path gambar (jika tidak update, tetap null/empty)
+        $imagePath = null;
+
+        if ($request->hasFile('room_image')) {
+            $file = $request->file('room_image');
+            $filename = time() . '_' . preg_replace('/\s+/', '', $request->room_type) . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('storage/room_images'), $filename);
+            $imagePath = 'room_images/' . $filename;
+        }
+
+        // CALL SP (pastikan sesuai urutan!)
+        DB::statement('CALL sp_update_room(?, ?, ?, ?, ?)', [
+            $roomId,
+            $request->room_type,
+            $request->price,
+            $request->stok,
+            $imagePath
+        ]);
+
+        return back()->with('success', 'Kamar berhasil diupdate!');
+    }
+
+
+
+
     public function deleteRoom($room_id)
     {
         try {
@@ -585,8 +632,6 @@ class OwnerController extends Controller
                 ->with('error', 'Gagal menghapus kamar: ' . $e->getMessage());
         }
     }
-
-
 
     public function get_FacilitiesByPropertyId($propertyId)
     {
@@ -751,7 +796,6 @@ class OwnerController extends Controller
             'photo' => 'nullable|image|max:2048',  // Foto profil
         ]);
 
-        // Nomor HP langsung pakai hasil intl-tel-input (tanpa proses lagi)
         $phone = $request->phone_pemilik_properti ?: null;
 
         // Update tabel users
@@ -761,23 +805,43 @@ class OwnerController extends Controller
             'email' => $request->email,
         ]);
 
-        // Ambil data lama dari pemilik_properti untuk default path jika user tidak upload baru
+        // Ambil data lama
         $oldData = DB::table('pemilik_properti')->where('id_users', $userId)->first();
 
-        // Handle upload foto profil jika ada
+        // Handle upload foto profil (profile_owner)
         $photoPath = $oldData->photo ?? null;
         if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('profile_owner', 'public');
+            $file = $request->file('photo');
+            // Hapus lama
+            if ($photoPath && file_exists(public_path('storage/' . $photoPath))) {
+                @unlink(public_path('storage/' . $photoPath));
+            }
+            $filename = time() . '_' . preg_replace('/\s+/', '', $request->username) . '.' . $file->getClientOriginalExtension();
+            $dest = public_path('storage/profile_owner/');
+            if (!file_exists($dest)) {
+                mkdir($dest, 0777, true);
+            }
+            $file->move($dest, $filename);
+            $photoPath = 'profile_owner/' . $filename;
         }
 
-        // Handle upload foto KTP jika ada
+        // Handle upload foto KTP (ktp_owner)
         $ktpPath = $oldData->ktp ?? null;
         if ($request->hasFile('ktp')) {
-            $ktpPath = $request->file('ktp')->store('ktp_owner', 'public');
+            $file = $request->file('ktp');
+            if ($ktpPath && file_exists(public_path('storage/' . $ktpPath))) {
+                @unlink(public_path('storage/' . $ktpPath));
+            }
+            $filename = time() . '_' . preg_replace('/\s+/', '', $request->username) . '.' . $file->getClientOriginalExtension();
+            $dest = public_path('storage/ktp_owner/');
+            if (!file_exists($dest)) {
+                mkdir($dest, 0777, true);
+            }
+            $file->move($dest, $filename);
+            $ktpPath = 'ktp_owner/' . $filename;
         }
 
         try {
-            // Simpan ke tabel pemilik_properti pakai stored procedure (id_users harus urutan ke-1)
             DB::statement('CALL upsert_pemilik_properti(?, ?, ?, ?, ?, ?, ?)', [
                 $userId,                             // id_users
                 $request->address_pemilik_properti,  // address_pemilik_properti

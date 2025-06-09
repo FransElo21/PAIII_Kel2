@@ -515,10 +515,18 @@
                                 <td>{{ $room->total_room ?? $room->stok }}</td>
                                 <td>{{ $room->available_room }}</td>
                                 <td class="text-center">
-                                    <a href="{{ route('property.room.edit', $room->room_id) }}"
-                                    class="btn btn-warning btn-sm rounded-circle me-1" title="Edit">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </a>
+                                    <a href="#" 
+                                        class="btn btn-warning btn-sm rounded-circle me-1 edit-room-btn"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editRoomModal"
+                                        data-room_id="{{ $room->room_id }}"
+                                        data-room_type="{{ $room->room_type }}"
+                                        data-price="{{ $room->latest_price }}"
+                                        data-stok="{{ $room->total_room ?? $room->stok }}"
+                                        data-image_path="{{ asset('storage/' . $room->image_path) }}"
+                                        title="Edit">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
                                     <form action="{{ route('property.room.delete', $room->room_id) }}"
                                         method="POST"
                                         class="d-inline delete-room-form">
@@ -543,6 +551,51 @@
                 </div>
 
             </div>            
+    </div>
+
+    <!-- Modal Edit Kamar -->
+    <div class="modal fade" id="editRoomModal" tabindex="-1" aria-labelledby="editRoomModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content shadow-lg rounded-4 border-0">
+                <div class="modal-header bg-warning text-white rounded-top-4">
+                    <h5 class="modal-title fw-semibold" id="editRoomModalLabel">Edit Kamar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4 py-3">
+                    <form id="editRoomForm" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" id="edit_room_id" name="room_id">
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="edit_room_type" class="form-label fw-medium">Tipe Kamar</label>
+                                <input type="text" class="form-control" id="edit_room_type" name="room_type" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_price" class="form-label fw-medium">Harga per Malam</label>
+                                <input type="text" class="form-control" id="edit_price" name="price" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_stok" class="form-label fw-medium">Kuantitas</label>
+                                <input type="number" class="form-control" id="edit_stok" name="stok" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="edit_room_image" class="form-label fw-medium">Gambar Kamar</label>
+                                <input type="file" class="form-control" id="edit_room_image" name="room_image">
+                                <div class="mt-2" id="edit_image_preview"></div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="submit" class="btn btn-warning px-4 py-2 rounded-pill shadow-sm">
+                                <i class="bi bi-save me-1"></i> Simpan Perubahan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal Tambah Kamar -->
@@ -884,6 +937,43 @@
             }
     });
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Saat modal edit dibuka
+    $('#editRoomModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const modal  = $(this);
+
+        // Isi data input
+        modal.find('#edit_room_id').val(button.data('room_id'));
+        modal.find('#edit_room_type').val(button.data('room_type'));
+        modal.find('#edit_price').val(button.data('price'));
+        modal.find('#edit_stok').val(button.data('stok'));
+        if (button.data('image_path')) {
+            modal.find('#edit_image_preview').html('<img src="' + button.data('image_path') + '" style="max-width:80px;max-height:60px;" class="rounded">');
+        } else {
+            modal.find('#edit_image_preview').html('');
+        }
+
+        // Ganti action form
+        const propertyId = '{{ $property->property_id }}';
+        const roomId = button.data('room_id');
+        modal.find('#editRoomForm').attr('action', `/property/${propertyId}/room/${roomId}/update`);
+    });
+
+    // Format input harga
+    const editPriceInput = document.getElementById('edit_price');
+    editPriceInput.addEventListener('input', e => {
+        let nums = e.target.value.replace(/\D/g, '');
+        e.target.value = nums ? 'Rp ' + new Intl.NumberFormat('id-ID').format(nums) : '';
+    });
+    document.getElementById('editRoomForm').addEventListener('submit', function(e){
+        editPriceInput.value = editPriceInput.value.replace(/\D/g, '');
+    });
+});
+</script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
